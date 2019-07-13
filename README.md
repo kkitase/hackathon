@@ -1,6 +1,6 @@
 ## **はじめてみよう GCP ハンズオンセミナー** の資料
  
-[はじめてみよう GCP ハンズオンセミナー Infrastracture 編](https://goo.gl/k2i1iX)
+[はじめてみよう GCP ハンズオンセミナー 基本編](https://goo.gle/startgcp1)
  
 [はじめてみよう GCP ハンズオンセミナー Data Analytics 編](https://goo.gl/MyFXEe)
  
