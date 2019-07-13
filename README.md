@@ -1,5 +1,3 @@
-# hackathon
-
 ## **はじめてみよう GCP ハンズオンセミナー** の資料
  
 + はじめてみよう GCP ハンズオンセミナー Infrastracture 編  
@@ -12,18 +10,14 @@ https://goo.gl/MyFXEe
 https://goo.gl/rkwpBe 
 https://goo.gl/KQYCXa 
  
-+ はじめてみよう GCP ハンズオンセミナー 機械学習編 
-https://goo.gl/3EVq8Q 
+[はじめてみよう GCP ハンズオンセミナー 機械学習編](https://goo.gl/3EVq8Q)
 
 ## 役立ちそうな サービス
-Google Cloud Platform
-https://cloud.google.com/
+[Google Cloud Platform (GCP)](https://cloud.google.com/)
 
-Firebase
-https://firebase.google.com/?hl=ja
 
-Google BigQuery GIS
-https://cloud.google.com/bigquery/docs/gis-intro?hl=ja  
+[Firebase](https://firebase.google.com/?hl=ja)
 
-Google Maps Platform
-https://cloud.google.com/maps-platform/?hl=ja
+[Google BigQuery GIS](https://cloud.google.com/bigquery/docs/gis-intro?hl=ja)
+
+[Google Maps Platform](https://cloud.google.com/maps-platform/?hl=ja)
