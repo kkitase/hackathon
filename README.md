@@ -4,9 +4,7 @@
  
 [はじめてみよう GCP ハンズオンセミナー Data Analytics 編](https://goo.gl/MyFXEe)
  
-[はじめてみよう GCP ハンズオンセミナー DevOps 編 1](https://goo.gl/rkwpBe)
-
-[はじめてみよう GCP ハンズオンセミナー DevOps 編 2](https://goo.gl/KQYCXa)
+[はじめてみよう GCP ハンズオンセミナー DevOps 編](handson/[Master] はじめてみよう GCP Data Analytics 編.pdf)
  
 [はじめてみよう GCP ハンズオンセミナー 機械学習編](https://goo.gl/3EVq8Q)
 
