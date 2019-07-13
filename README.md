@@ -16,5 +16,6 @@ https://goo.gl/KQYCXa
 https://goo.gl/3EVq8Q
 
 ## 役立ちそうな サービス
-https://firebase.google.com/docs/guides?hl=ja
-https://cloud.google.com/bigquery/docs/gis?hl=ja
+https://firebase.google.com/docs/guides?hl=ja  
+https://cloud.google.com/bigquery/docs/gis?hl=ja  
+
