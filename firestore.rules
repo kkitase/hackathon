@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 管理者かどうかを判定する補助関数
+    function isAdmin() {
+      return exists(/databases/$(database)/documents/config/admin) &&
+             (request.auth.token.email in get(/databases/$(database)/documents/config/admin).data.authorizedEmails);
+    }
+
+    // 基本的な設定（ヒーロー、コンテンツ、OGPなど）
+    match /config/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // その他のドキュメント
+    match /{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

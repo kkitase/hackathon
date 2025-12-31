@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{OGP_TITLE}}</title>
+    <meta name="description" content="{{OGP_DESCRIPTION}}" />
+    <style>
+      /* 初期表示時のチラつき防止 */
+      .nav-links > * {
+        visibility: hidden;
+      }
+      .nav-links.ready > * {
+        visibility: visible;
+      }
+    </style>
+    <!-- Social Meta Tags (OGP) -->
+    <meta id="meta-og-title" property="og:title" content="{{OGP_TITLE}}" />
+    <meta
+      id="meta-og-description"
+      property="og:description"
+      content="{{OGP_DESCRIPTION}}"
+    />
+    <meta id="meta-og-image" property="og:image" content="{{OGP_IMAGE}}" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;800&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="drawer-overlay" class="drawer-overlay"></div>
+    <aside id="mobile-drawer" class="mobile-drawer">
+      <div class="drawer-header">
+        <button id="drawer-close" class="drawer-close">&times;</button>
+      </div>
+      <nav class="drawer-nav">
+        <button class="tab-btn" data-tab="overview">概要</button>
+        <button class="tab-btn" data-tab="updates">更新情報</button>
+        <button class="tab-btn" data-tab="schedule">スケジュール</button>
+        <button class="tab-btn" data-tab="prizes">プライズ</button>
+        <button class="tab-btn" data-tab="rules">ルール</button>
+        <button class="tab-btn" data-tab="judges">審査員</button>
+        <button class="tab-btn" data-tab="faq">FAQ</button>
+        <button class="tab-btn" data-tab="projects">プロジェクト</button>
+      </nav>
+    </aside>
+
+    <header>
+      <div class="container header-container">
+        <div class="header-left">
+          <button id="menu-toggle" class="menu-toggle">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path
+                d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"
+                fill="currentColor"
+              ></path>
+            </svg>
+          </button>
+          <nav class="tabs-nav">
+            <button class="tab-btn" data-tab="overview">概要</button>
+            <button class="tab-btn" data-tab="updates">更新情報</button>
+            <button class="tab-btn" data-tab="schedule">スケジュール</button>
+            <button class="tab-btn" data-tab="prizes">プライズ</button>
+            <button class="tab-btn" data-tab="rules">ルール</button>
+            <button class="tab-btn" data-tab="judges">審査員</button>
+            <button class="tab-btn" data-tab="faq">FAQ</button>
+            <button class="tab-btn" data-tab="projects">プロジェクト</button>
+          </nav>
+        </div>
+        <div class="header-right">
+          <div class="nav-links">
+            <a href="./admin.html" id="admin-link">管理ページ</a>
+            <a href="#" id="logout-btn-header" style="display: none"
+              >ログアウト</a
+            >
+            <div id="user-profile" style="display: none">
+              <a href="#" class="btn btn-dark btn-sm" id="register-btn-header"
+                >申し込み</a
+              >
+              <div id="user-avatar"></div>
+            </div>
+            <a href="#" class="btn btn-dark btn-sm" id="auth-btn-header"
+              >サインイン</a
+            >
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="container">
+          <div
+            class="hero-content"
+            style="opacity: 0; transition: opacity 0.3s ease"
+          >
+            <h1 id="hero-title">{{HERO_TITLE}}</h1>
+            <p id="hero-subtitle">{{HERO_SUBTITLE}}</p>
+            <p
+              id="hero-notice"
+              style="margin-top: 1.5rem; font-size: 0.875rem; color: #5f6368"
+            >
+              {{HERO_NOTICE}}
+            </p>
+          </div>
+          <div class="hero-image">
+            <img
+              src="./assets/hero-illustration.jpg"
+              alt="AI Community Illustration"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section class="tabs-section">
+        <div class="container">
+          <div
+            id="tab-content"
+            class="content-area"
+            style="
+              padding: 2rem 0 80px;
+              opacity: 0;
+              transition: opacity 0.3s ease;
+            "
+          >
+            <!-- Firestore からのデータ読み込み完了後にコンテンツが表示されます -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer
+      style="
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        padding: 40px 0;
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 0.875rem;
+      "
+    >
+      <div class="container">
+        <p>&copy; 2025 AI Agent Hackathon Committee. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
