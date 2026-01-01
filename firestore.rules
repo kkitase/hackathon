@@ -1,13 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 管理者かどうかを判定する補助関数
+    // 管理者かどうかを判定する補助関数 (Google Auth 用に維持)
     function isAdmin() {
-      return exists(/databases/$(database)/documents/config/admin) &&
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/config/admin) &&
              (request.auth.token.email in get(/databases/$(database)/documents/config/admin).data.authorizedEmails);
     }
 
-    // 基本的な設定（ヒーロー、コンテンツ、OGPなど）
+    // 全ての設定（管理者、コンテンツ、OGP、データ）：読み取りはログインチェック用に維持、書き込みは管理者のみ
     match /config/{document} {
       allow read: if true;
       allow write: if isAdmin();

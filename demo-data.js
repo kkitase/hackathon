@@ -62,6 +62,10 @@ import { chromium } from "playwright";
     "心身を「ととのえる」サウナの力を活かし、革新的なウェルネステックソリューションを開発せよ。"
   );
 
+  // 検索エンジンに公開を有効にする
+  console.log("検索エンジン公開設定を有効化中...");
+  await page.check("#field-allow-indexing");
+
   await page.click("#save-btn");
   await page.waitForTimeout(2000);
   console.log("OGP設定保存完了！");

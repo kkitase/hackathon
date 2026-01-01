@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build && cp dist/index.html functions/template.html && mv dist/index.html dist/_index.html",
     "preview": "vite preview",
-    "setup": "node setup.js"
+    "setup": "node setup.js",
+    "demo-data": "node demo-data.js"
   },
   "devDependencies": {
     "vite": "^6.0.0"

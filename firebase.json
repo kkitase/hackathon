@@ -12,10 +12,21 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      {
+        "source": "/robots.txt",
+        "destination": "/robots_dynamic",
+        "type": 302
+      }
+    ],
     "rewrites": [
       {
         "source": "/admin.html",
         "destination": "/admin.html"
+      },
+      {
+        "source": "/robots_dynamic",
+        "function": "ssr"
       },
       {
         "source": "**",

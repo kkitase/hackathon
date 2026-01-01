@@ -1,4 +1,4 @@
-const functions = require("firebase-functions");
+const { onRequest } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const fs = require("fs");
 const path = require("path");
@@ -12,9 +12,34 @@ const defaultHeroData = {
     "未来を創るAIエージェントの競演。Google Cloudのパワーを使い、次世代のソリューションを開発せよ。",
 };
 
-// OGP SSR Function
-exports.ssr = functions.https.onRequest(async (req, res) => {
+// OGP SSR Function (東京リージョン)
+exports.ssr = onRequest({ region: "asia-northeast1" }, async (req, res) => {
   try {
+    // robots.txt のリクエストを処理 (Hosting 経由 / 直アクセス両対応)
+    const normalizedPath = (req.path || req.url || "").split("?")[0];
+    if (
+      normalizedPath === "/robots.txt" ||
+      normalizedPath.endsWith("/robots.txt") ||
+      normalizedPath === "/robots_dynamic" ||
+      normalizedPath.endsWith("/robots_dynamic")
+    ) {
+      const ogpSnap = await admin.firestore().doc("config/ogp").get();
+      const ogpData = ogpSnap.exists ? ogpSnap.data() : {};
+      const allowIndexing = ogpData.allowIndexing === true;
+
+      let robotsTxt;
+      if (allowIndexing) {
+        robotsTxt = `# Hackathon Launch Kit - robots.txt\n# 検索エンジンに公開: 有効\n\nUser-agent: *\nDisallow: /admin.html\nAllow: /\n`;
+      } else {
+        robotsTxt = `# Hackathon Launch Kit - robots.txt\n# 検索エンジンに公開: 無効\n\nUser-agent: *\nDisallow: /\n`;
+      }
+
+      res.set("Content-Type", "text/plain");
+      // robots.txt は即時反映が必要なため、ブラウザキャッシュ無効、CDNキャッシュも最小限にする
+      res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+      return res.status(200).send(robotsTxt);
+    }
+
     // 1. Firestore から最新の OGP データを取得
     const ogpSnap = await admin.firestore().doc("config/ogp").get();
     const ogpData = ogpSnap.exists

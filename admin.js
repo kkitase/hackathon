@@ -119,6 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ogTitle: "",
       ogDescription: "",
       ogImage: "",
+      allowIndexing: false,
     },
   };
 
@@ -496,27 +497,48 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button type="button" id="add-faq-item" class="btn" style="background: #e2e8f0; color: var(--text-main);">+ FAQを追加</button>`;
         break;
       case "social":
-        const s = data.social || {
-          ogTitle: "",
-          ogDescription: "",
-          ogImage: "",
+        const s = {
+          ogTitle: data.social?.ogTitle || "",
+          ogDescription: data.social?.ogDescription || "",
+          ogImage: data.social?.ogImage || "",
+          allowIndexing: data.social?.allowIndexing === true,
         };
         html = `
             <div class="form-group">
                 <label>SNS用タイトル (og:title)</label>
-                <input type="text" class="form-input" id="field-social-title" value="${s.ogTitle}" />
+                <input type="text" class="form-input" id="field-social-title" value="${
+                  s.ogTitle
+                }" />
             </div>
             <div class="form-group">
                 <label>SNS用説明文 (og:description)</label>
-                <textarea class="form-input" id="field-social-desc" style="min-height: 80px;">${s.ogDescription}</textarea>
+                <textarea class="form-input" id="field-social-desc" style="min-height: 80px;">${
+                  s.ogDescription
+                }</textarea>
             </div>
             <div class="form-group">
                 <label>SNS用画像 (og:image) URL</label>
                 <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem;">
-                    <input type="text" class="form-input" id="field-social-image" value="${s.ogImage}" placeholder="https://example.com/image.jpg" />
-                    <div class="social-image-preview" style="width: 240px; height: 126px; border-radius: 0.5rem; background: #e2e8f0; background-image: url('${s.ogImage}'); background-size: cover; background-position: center; border: 1px solid var(--border); flex-shrink: 0;"></div>
+                    <input type="text" class="form-input" id="field-social-image" value="${
+                      s.ogImage
+                    }" placeholder="https://example.com/image.jpg" />
+                    <div class="social-image-preview" style="width: 240px; height: 126px; border-radius: 0.5rem; background: #e2e8f0; background-image: url('${
+                      s.ogImage
+                    }'); background-size: cover; background-position: center; border: 1px solid var(--border); flex-shrink: 0;"></div>
                     <p style="font-size: 0.75rem; color: var(--text-muted);">1200x630px 推奨。画像の直接リンクを入力してください。</p>
                 </div>
+            </div>
+            <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1rem;">
+                <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                    <input type="checkbox" id="field-allow-indexing" ${
+                      s.allowIndexing ? "checked" : ""
+                    } style="width: 1.25rem; height: 1.25rem;" />
+                    <span>検索エンジンに公開する</span>
+                </label>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    有効にすると、Google などの検索エンジンにインデックスされます。<br>
+                    無効の場合、robots.txt により全てのクローラーをブロックします。
+                </p>
             </div>`;
         break;
       case "admins":
@@ -885,6 +907,8 @@ document.addEventListener("DOMContentLoaded", () => {
           ogDescription:
             document.getElementById("field-social-desc")?.value || "",
           ogImage: document.getElementById("field-social-image")?.value || "",
+          allowIndexing:
+            document.getElementById("field-allow-indexing")?.checked || false,
         };
         break;
     }
@@ -962,6 +986,7 @@ document.addEventListener("DOMContentLoaded", () => {
               ogTitle: data.social.ogTitle || "",
               ogDescription: data.social.ogDescription || "",
               ogImage: data.social.ogImage || "",
+              allowIndexing: data.social.allowIndexing || false,
               updatedAt: serverTimestamp(),
             },
             { merge: true }
