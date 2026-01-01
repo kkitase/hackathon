@@ -10,7 +10,6 @@ const defaultHeroData = {
   title: "第3回 AI Agent Hackathon with Google Cloud",
   subtitle:
     "未来を創るAIエージェントの競演。Google Cloudのパワーを使い、次世代のソリューションを開発せよ。",
-  notice: "本イベントの申し込み期間は終了しました",
 };
 
 // OGP SSR Function
@@ -48,7 +47,7 @@ exports.ssr = functions.https.onRequest(async (req, res) => {
         /{{HERO_SUBTITLE}}/g,
         heroData.subtitle || defaultHeroData.subtitle
       )
-      .replace(/{{HERO_NOTICE}}/g, heroData.notice || defaultHeroData.notice);
+      .replace(/{{HERO_CTA}}/g, heroData.ctaText || "");
 
     // 6. 完成した HTML を返却
     res.set("Cache-Control", "public, max-age=600, s-maxage=1200");

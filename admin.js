@@ -17,6 +17,39 @@ import {
 import { signInWithPopup } from "firebase/auth";
 import { googleProvider } from "./firebase.js";
 
+/**
+ * 軽量 Markdown パーサー
+ * 対応: 見出し, 太字, イタリック, リンク, リスト, 改行
+ */
+const parseMarkdown = (text) => {
+  if (!text) return "";
+  return (
+    text
+      // 見出し（##, ###）
+      .replace(
+        /^### (.+)$/gm,
+        '<h4 style="margin: 1rem 0 0.5rem; color: var(--primary);">$1</h4>'
+      )
+      .replace(
+        /^## (.+)$/gm,
+        '<h3 style="margin: 1.5rem 0 0.75rem; font-size: 1.25rem;">$1</h3>'
+      )
+      // 太字とイタリック
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*(.+?)\*/g, "<em>$1</em>")
+      // リンク
+      .replace(
+        /\[(.+?)\]\((.+?)\)/g,
+        '<a href="$2" target="_blank" rel="noopener" style="color: var(--primary);">$1</a>'
+      )
+      // リスト（- で始まる行）
+      .replace(/^- (.+)$/gm, '<li style="margin-left: 1.5rem;">$1</li>')
+      // 改行
+      .replace(/\n\n/g, '</p><p style="margin: 1rem 0;">')
+      .replace(/\n/g, "<br>")
+  );
+};
+
 // Admin Logic with Form-based Editing
 document.addEventListener("DOMContentLoaded", () => {
   const navButtons = document.querySelectorAll(".admin-nav-btn");
@@ -26,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetBtn = document.getElementById("reset-btn");
   const saveStatus = document.getElementById("save-status");
 
-  let currentTab = "hero";
+  let currentTab = "overview";
   let hasChanges = false;
 
   // カスタムモーダルダイアログを表示
@@ -68,7 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
       title: "",
       subtitle: "",
       ctaText: "",
-      notice: "",
     },
     overview: {
       title: "",
@@ -127,15 +159,21 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="fade-in">
             <h2 style="font-size: 1.75rem; margin-bottom: 2rem;">プロジェクト概要</h2>
             <div style="background: white; padding: 2.5rem; border-radius: 1.25rem; border: 1px solid var(--border); line-height: 1.8;">
-                <p style="margin-bottom: 1.5rem;">${d.description}</p>
+                <div style="margin-bottom: 1.5rem;">${parseMarkdown(
+                  d.description
+                )}</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
                     <div style="padding: 1.5rem; background: var(--background); border-radius: 1rem;">
                         <h4 style="margin-bottom: 0.5rem; color: var(--primary);">テーマ</h4>
-                        <p style="font-size: 0.9375rem;">${d.theme}</p>
+                        <div style="font-size: 0.9375rem;">${parseMarkdown(
+                          d.theme
+                        )}</div>
                     </div>
                     <div style="padding: 1.5rem; background: var(--background); border-radius: 1rem;">
                         <h4 style="margin-bottom: 0.5rem; color: var(--primary);">対象技術</h4>
-                        <p style="font-size: 0.9375rem;">${d.tech}</p>
+                        <div style="font-size: 0.9375rem;">${parseMarkdown(
+                          d.tech
+                        )}</div>
                     </div>
                 </div>
             </div>
@@ -163,9 +201,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <h4 style="font-size: 1.125rem; margin-bottom: 0.5rem;">${
                       item.title
                     }</h4>
-                    <p style="color: var(--text-muted); font-size: 0.9375rem;">${
+                    <p style="color: var(--text-muted); font-size: 0.9375rem;">${parseMarkdown(
                       item.description
-                    }</p>
+                    )}</p>
                 </div>`
                   )
                   .join("")}
@@ -182,11 +220,13 @@ document.addEventListener("DOMContentLoaded", () => {
                   .map(
                     (j) => `
                 <div class="judge-card">
-                    <div class="judge-avatar" style="background-image: url('${j.avatar}'); background-size: cover;"></div>
+                    <div class="judge-avatar" style="background-image: url('${
+                      j.avatar
+                    }'); background-size: cover;"></div>
                     <div class="judge-info">
                         <h3>${j.name}</h3>
                         <p class="judge-title">${j.title}</p>
-                        <p class="judge-bio">${j.bio}</p>
+                        <p class="judge-bio">${parseMarkdown(j.bio)}</p>
                     </div>
                 </div>`
                   )
@@ -201,10 +241,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${items
                   .map(
                     (u) => `
-                <div style="background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border); display: flex; align-items: center; gap: 1rem;">
-                    <span style="font-size: 0.8125rem; color: var(--primary); font-weight: 700; background: rgba(59, 130, 246, 0.1); padding: 0.25rem 0.75rem; border-radius: 999px; flex-shrink: 0;">${u.tag}</span>
-                    <span style="font-size: 0.875rem; color: var(--text-muted); flex-shrink: 0;">${u.date}</span>
-                    <span style="font-weight: 500;">${u.text}</span>
+                <div style="background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border); display: flex; align-items: flex-start; gap: 1rem;">
+                    <span style="font-size: 0.875rem; color: var(--text-muted); flex-shrink: 0;">${
+                      u.date
+                    }</span>
+                    <span style="font-weight: 500;">${parseMarkdown(
+                      u.text
+                    )}</span>
                 </div>`
                   )
                   .join("")}
@@ -219,8 +262,10 @@ document.addEventListener("DOMContentLoaded", () => {
                   .map(
                     (p) => `
                 <div style="background: white; padding: 2rem; border-radius: 1rem; border: 1px solid var(--border);">
-                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${p.title}</h3>
-                    <p>${p.description}</p>
+                    <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${
+                      p.title
+                    }</h3>
+                    <div>${parseMarkdown(p.description)}</div>
                 </div>`
                   )
                   .join("")}
@@ -230,13 +275,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const generateRulesHtml = (items) => `
         <div class="fade-in">
             <h2 style="font-size: 1.75rem; margin-bottom: 2rem;">ルール</h2>
-            <ul style="background: white; padding: 2rem; border-radius: 1rem; border: 1px solid var(--border); list-style: disc; padding-left: 3rem;">
+            <div style="background: white; padding: 2rem; border-radius: 1rem; border: 1px solid var(--border);">
                 ${items
                   .map(
-                    (r) => `<li style="margin-bottom: 0.75rem;">${r.text}</li>`
+                    (r) =>
+                      `<div style="margin-bottom: 1rem; line-height: 1.6;">${parseMarkdown(
+                        r.text
+                      )}</div>`
                   )
                   .join("")}
-            </ul>
+            </div>
         </div>`;
 
   const generateProjectsHtml = (items) => `
@@ -258,9 +306,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 ${items
                   .map(
                     (f) => `
-                <div style="background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border);">
-                    <h4 style="margin-bottom: 0.5rem; color: var(--primary);">Q. ${f.question}</h4>
-                    <p>A. ${f.answer}</p>
+                <div style="background: white; padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border); line-height: 1.6;">
+                    ${parseMarkdown(
+                      f.content || `## ${f.question || ""}\n\n${f.answer || ""}`
+                    )}
                 </div>`
                   )
                   .join("")}
@@ -315,25 +364,21 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="form-group">
                         <label>CTAボタンのテキスト</label>
                         <input type="text" class="form-input" id="field-hero-cta" value="${h.ctaText}" />
-                    </div>
-                    <div class="form-group">
-                        <label>注意書き（ボタン下のテキスト）</label>
-                        <input type="text" class="form-input" id="field-hero-notice" value="${h.notice}" />
                     </div>`;
         break;
       case "overview":
         html = `
                     <div class="form-group">
-                        <label>説明文</label>
+                        <label>説明文（Markdown対応）</label>
                         <textarea class="form-input form-textarea" id="field-description" style="min-height: 100px;">${data.overview.description}</textarea>
                     </div>
                     <div class="form-group">
-                        <label>テーマ</label>
-                        <input type="text" class="form-input" id="field-theme" value="${data.overview.theme}" />
+                        <label>テーマ（Markdown対応）</label>
+                        <textarea class="form-input form-textarea" id="field-theme" style="min-height: 100px;">${data.overview.theme}</textarea>
                     </div>
                     <div class="form-group">
-                        <label>対象技術</label>
-                        <input type="text" class="form-input" id="field-tech" value="${data.overview.tech}" />
+                        <label>対象技術（Markdown対応）</label>
+                        <textarea class="form-input form-textarea" id="field-tech" style="min-height: 100px;">${data.overview.tech}</textarea>
                     </div>`;
         break;
       case "schedule":
@@ -349,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
                               item.title
                             }" placeholder="タイトル" />
                         </div>
-                        <textarea class="form-input field-desc" style="min-height: 60px;" placeholder="説明">${
+                        <textarea class="form-input field-desc" style="min-height: 60px;" placeholder="説明（Markdown対応）">${
                           item.description
                         }</textarea>
                         <label style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.875rem;">
@@ -383,7 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <p style="font-size: 0.75rem; color: var(--text-muted);">JPEG, PNG, GIF, WebP（最大2MB）</p>
                             </div>
                         </div>
-                        <textarea class="form-input field-bio" style="min-height: 60px;" placeholder="プロフィール">${j.bio}</textarea>
+                        <textarea class="form-input field-bio" style="min-height: 60px;" placeholder="プロフィール（Markdown対応）">${j.bio}</textarea>
                         <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
                     </div>`
           )
@@ -395,16 +440,13 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (u, i) => `
                     <div class="item-block" data-index="${i}">
-                        <div style="display: grid; grid-template-columns: 100px 1fr 150px; gap: 1rem; margin-bottom: 1rem;">
-                            <input type="text" class="form-input field-tag" value="${
-                              u.tag
-                            }" placeholder="タグ" />
-                            <input type="text" class="form-input field-text" value="${
-                              u.text
-                            }" placeholder="内容" />
+                        <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <input type="date" class="form-input field-date" value="${toInputFormat(
                               u.date
                             )}" />
+                            <input type="text" class="form-input field-text" value="${
+                              u.text
+                            }" placeholder="内容" />
                         </div>
                         <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);" />
                     </div>`
@@ -430,7 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (r, i) => `
                     <div class="item-block" data-index="${i}">
-                        <input type="text" class="form-input field-text" value="${r.text}" placeholder="ルール項目" />
+                        <textarea class="form-input field-text form-textarea" style="min-height: 80px;" placeholder="ルール項目（Markdown対応）">${r.text}</textarea>
                         <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);" />
                     </div>`
           )
@@ -442,8 +484,11 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (f, i) => `
                     <div class="item-block" data-index="${i}">
-                        <input type="text" class="form-input field-question" value="${f.question}" placeholder="質問" style="margin-bottom: 1rem;" />
-                        <textarea class="form-input field-answer" style="min-height: 60px;" placeholder="回答">${f.answer}</textarea>
+                        <label style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">FAQ項目（Markdown対応）</label>
+                        <textarea class="form-input field-content form-textarea" style="min-height: 120px;" placeholder="## 質問タイトル\n\n回答の内容をここに記述...">${
+                          f.content ||
+                          `## ${f.question || ""}\n\n${f.answer || ""}`
+                        }</textarea>
                         <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
                     </div>`
           )
@@ -756,7 +801,6 @@ document.addEventListener("DOMContentLoaded", () => {
           title: document.getElementById("field-hero-title")?.value || "",
           subtitle: document.getElementById("field-hero-subtitle")?.value || "",
           ctaText: document.getElementById("field-hero-cta")?.value || "",
-          notice: document.getElementById("field-hero-notice")?.value || "",
         };
         break;
       case "overview":
@@ -771,13 +815,20 @@ document.addEventListener("DOMContentLoaded", () => {
       case "schedule":
         data.schedule = [
           ...formContainer.querySelectorAll("#schedule-items .item-block"),
-        ].map((block) => ({
-          date:
-            toDisplayFormat(block.querySelector(".field-date")?.value) || "",
-          title: block.querySelector(".field-title")?.value || "",
-          description: block.querySelector(".field-desc")?.value || "",
-          active: block.querySelector(".field-active")?.checked || false,
-        }));
+        ]
+          .map((block) => ({
+            date:
+              toDisplayFormat(block.querySelector(".field-date")?.value) || "",
+            title: block.querySelector(".field-title")?.value || "",
+            description: block.querySelector(".field-desc")?.value || "",
+            active: block.querySelector(".field-active")?.checked || false,
+          }))
+          // 日付順（昇順）でソート
+          .sort((a, b) => {
+            const dateA = a.date.replace(/\./g, "-");
+            const dateB = b.date.replace(/\./g, "-");
+            return dateA.localeCompare(dateB);
+          });
         break;
       case "judges":
         data.judges = [
@@ -792,12 +843,19 @@ document.addEventListener("DOMContentLoaded", () => {
       case "updates":
         data.updates = [
           ...formContainer.querySelectorAll("#update-items .item-block"),
-        ].map((block) => ({
-          tag: block.querySelector(".field-tag")?.value || "",
-          text: block.querySelector(".field-text")?.value || "",
-          date:
-            toDisplayFormat(block.querySelector(".field-date")?.value) || "",
-        }));
+        ]
+          .map((block) => ({
+            text: block.querySelector(".field-text")?.value || "",
+            date:
+              toDisplayFormat(block.querySelector(".field-date")?.value) || "",
+          }))
+          // 日付順（降順：新しい順）でソート
+          .sort((a, b) => {
+            // YYYY.MM.DD または YYYY/MM/DD を YYYY-MM-DD に統一
+            const dateA = a.date.replace(/[./]/g, "-");
+            const dateB = b.date.replace(/[./]/g, "-");
+            return dateB.localeCompare(dateA);
+          });
         break;
       case "prizes":
         data.prizes = [
@@ -818,8 +876,7 @@ document.addEventListener("DOMContentLoaded", () => {
         data.faq = [
           ...formContainer.querySelectorAll("#faq-items .item-block"),
         ].map((block) => ({
-          question: block.querySelector(".field-question")?.value || "",
-          answer: block.querySelector(".field-answer")?.value || "",
+          content: block.querySelector(".field-content")?.value || "",
         }));
         break;
       case "social":

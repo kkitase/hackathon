@@ -24,7 +24,12 @@ Firebase と SSR (Server Side Rendering) を活用した、チラつきのない
 ### 1. Firebase プロジェクトの作成と設定
 CLI を使用して、プロジェクトの枠組みを迅速に作成します。
 
+**前提条件**: Node.js がインストールされていること。未インストールの場合は [Node.js公式サイト](https://nodejs.org/) からダウンロードしてインストールしてください。
+
 ```bash
+# 0. Firebase CLI のインストール（未インストールの場合）
+npm install -g firebase-tools
+
 # 1. ログイン
 firebase login
 
@@ -32,7 +37,7 @@ firebase login
 firebase projects:create <PROJECT_ID> --title "My Hackathon"
 
 # 3. Webアプリの登録
-firebase apps:create WEB "Hackathon Web"
+firebase apps:create WEB "Hackathon Web" --project <PROJECT_ID>
 ```
 
 ### 2. コンソールでの有効化 (最小限の手動操作)
@@ -43,27 +48,58 @@ firebase apps:create WEB "Hackathon Web"
 3. **サービスアカウントキーの取得**: プロジェクト → プロジェクト設定 → サービスアカウント → 「新しい秘密鍵の生成」→ ダウンロードしたファイルを `serviceAccountKey.json` としてプロジェクトルートに配置。
 
 ### 3. セットアップとデプロイ
+
+#### 3.1 Firebase 設定ファイルの作成
 ```bash
-# 4. Firebase 設定ファイルの作成
-#    テンプレートをコピーして firebase.js を作成します
+# テンプレートをコピーして firebase.js を作成
 cp firebase.js.example firebase.js
+```
 
-# 5. Firebase 設定情報の取得と反映
-#    以下のコマンドで apiKey, authDomain などの設定情報が出力されます
-firebase apps:sdkconfig WEB
-#    ↑ 出力された firebaseConfig オブジェクトを firebase.js にコピー＆ペーストしてください
+#### 3.2 Firebase 設定情報の取得
 
-# 5. 依存関係のインストール
-#    Node.js パッケージ（Firebase SDK など）をインストールします
+以下のコマンドを実行して、設定情報を取得します：
+```bash
+firebase apps:sdkconfig WEB --project YOUR_PROJECT_ID
+```
+
+> **📝 YOUR_PROJECT_ID**: 手順1で作成したプロジェクトID（例: `my-hackathon-2025`）を入力してください。
+
+出力例：
+```javascript
+const firebaseConfig = {
+  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  authDomain: "your-project-id.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project-id.firebasestorage.app",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abcdef1234567890"
+};
+```
+
+| 設定項目 | 説明 | 取得元 |
+|---------|------|--------|
+| `apiKey` | Firebase API キー | `firebase apps:sdkconfig` の出力 |
+| `authDomain` | 認証ドメイン | `{projectId}.firebaseapp.com` |
+| `projectId` | Firebase プロジェクト ID | Firebase Console のプロジェクト設定 |
+| `storageBucket` | Cloud Storage バケット | `{projectId}.firebasestorage.app` |
+| `messagingSenderId` | FCM 送信者 ID | `firebase apps:sdkconfig` の出力 |
+| `appId` | Firebase アプリ ID | `firebase apps:sdkconfig` の出力 |
+
+> **📋 手順**: 上記の出力を `firebase.js` にコピー＆ペーストしてください。
+
+#### 3.3 依存関係のインストール
+```bash
 npm install
+```
 
-# 6. 管理者アカウントのセットアップ
-#    対話式で管理者ID、パスワード、許可メールアドレスを入力します
-#    入力した情報は Firestore の config/admin に保存されます
+#### 3.4 管理者アカウントのセットアップ
+```bash
+# 対話式で管理者ID、パスワード、許可メールアドレスを入力
 npm run setup
+```
 
-# 7. ビルドとデプロイ
-#    フロントエンドをビルドし、Firebase Hosting と Cloud Functions にデプロイします
+#### 3.5 ビルドとデプロイ
+```bash
 npm run build && firebase deploy
 ```
 

@@ -22,7 +22,6 @@ import { chromium } from "playwright";
     "#field-hero-subtitle",
     "心身を「ととのえる」サウナの力を活かし、革新的なウェルネステックソリューションを開発せよ。"
   );
-  await page.fill("#field-hero-notice", "参加申し込み受付中！");
 
   // 保存ボタンをクリック
   await page.click("#save-btn");
