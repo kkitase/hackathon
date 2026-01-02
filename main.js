@@ -1231,6 +1231,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // 取り下げボタンを非表示に戻す
     const withdrawBtn = document.getElementById("register-withdraw-btn");
     if (withdrawBtn) withdrawBtn.style.display = "none";
+    // 送信ボタンの状態をリセット
+    const submitBtn = document.getElementById("register-submit-btn");
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "登録する";
+    }
   };
 
   registerModalClose?.addEventListener("click", closeRegisterModal);
@@ -1337,14 +1343,13 @@ document.addEventListener("DOMContentLoaded", () => {
         updatedAt: serverTimestamp(),
       };
 
-      // 必須項目のバリデーション
+      // 必須項目のバリデーション（役職は任意）
       if (
         !lastName ||
         !firstName ||
         !data.email ||
         !data.company ||
-        !data.organization ||
-        !data.role
+        !data.organization
       ) {
         throw new Error("必須項目を全て入力してください。");
       }
@@ -1362,6 +1367,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // 更新処理
         delete data.createdAt; // 作成日は維持
         await updateDoc(participantsRef, data);
+        // 更新後のデータで currentUserParticipantData を即座に更新
+        currentUserParticipantData = { ...currentUserParticipantData, ...data };
         if (registerMessage)
           registerMessage.textContent = "登録情報を更新しました！";
       } else {
@@ -1372,6 +1379,8 @@ document.addEventListener("DOMContentLoaded", () => {
           throw new Error("このメールアドレスは既に登録されています。");
         }
         await setDoc(participantsRef, data);
+        // 新規登録時も currentUserParticipantData を設定
+        currentUserParticipantData = { email: data.email, ...data };
         if (registerMessage)
           registerMessage.textContent = "参加登録が完了しました！";
       }

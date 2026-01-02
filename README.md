@@ -24,119 +24,107 @@ Firebase と SSR (Server Side Rendering) を活用した、チラつきのない
 
 ---
 
-## 🚀 構築・公開手順 (10分)
+## 🚀 構築・公開手順 (15分)
 
-### 1. リポジトリのクローン
-まず、GitHub からリポジトリをクローンします。
+### 0. 事前準備（必要なければ飛ばしてください）
 
+**Google Cloud アカウントの準備**
+
+Firebase は Google Cloud 上で動作するため、事前に Google Cloud の課金アカウントを有効にしておく必要があります。
+
+（課金アカウントが有効になっていない場合、下記の手順で有効にしてください）
+1. Google アカウントでログイン
+2. <a href="https://console.cloud.google.com/billing" target="_blank">Google Cloud 課金アカウント</a> にアクセスして、アカウントを作成
+> ✅ Google Cloud は、2026 年 1 月 1 日から 2 段階認証プロセス（2SV）の適用を開始しました。設定していない人は、設定に移動 → 2 段階認証を有効にしてください。
+
+> 📝 **補足**: 課金アカウントを作成してもすぐに請求が発生するわけではありません。小〜中規模のサイトであれば無料枠内で収まることがほとんどです。
+> 
+
+**Node.js のインストール**
+
+Node.js がインストールされていない場合は、先にインストールしてください。Node.js は JavaScript をパソコンで動かすためのツールです。npm（パッケージ管理ツール）も一緒にインストールされます。
+
+1. [Node.js 公式サイト](https://nodejs.org/ja/) にアクセス
+2. **LTS（推奨版）** をダウンロード
+3. ダウンロードしたファイルを開いてインストール（すべて「次へ」でOK）
+4. インストール確認（ターミナル/コマンドプロンプトで実行）:
 ```bash
-git clone https://github.com/kkitase/hackathon-builder.git
-cd hackathon-builder
+node -v    # 例: v20.10.0
+npm -v     # 例: 10.2.3
 ```
-
-### 2. Firebase プロジェクトの作成と設定
-CLI を使用して、プロジェクトの枠組みを迅速に作成します。
-
-**前提条件**: Node.js がインストールされていること。未インストールの場合は [Node.js公式サイト](https://nodejs.org/) からダウンロードしてインストールしてください。
-
-```bash
-# 0. Firebase CLI のインストール（未インストールの場合）
-npm install -g firebase-tools
-
-# 1. ログイン
-firebase login
-
-# (補足) 別のGoogleアカウントを使用したい場合
-# 既にログイン済みで別のアカウントに切り替える場合は、まず追加してから切り替えます
-firebase login:add          # ブラウザが開くので、使用したいアカウントでログイン
-firebase login:use <email>  # 追加したアカウントに切り替え
-
-# 2. プロジェクトの作成 (IDは任意、小文字/数字/ハイフン)
-firebase projects:create <PROJECT_ID> -n "My Hackathon"
-
-# 3. Webアプリの登録
-firebase apps:create WEB "Hackathon Web" --project <PROJECT_ID>
-```
-
-### 3. コンソールでの有効化 (最小限の手動操作)
-以下の 2 つだけは [Firebase Console](https://console.firebase.google.com/) で行ってください。
-
-1. **Firestore**: 構築 → 「Firestore Database」を選択、「データベースの作成」→「Standardエディション」→「ロケーション (`asia-northeast1`)」→ 「本番環境モードで開始する」選択して作成。
-2. **Authentication**:  構築 → 「Authentication」を選択、「始める」→ **Google** を有効化。
-3. **Storage**: 構築 → 「Storage」を選択、「使ってみる」→ デフォルト バケットのセットアップで、「すべてのロケーション(`asia-northeast1`)」→「本番環境モード」で作成（OGP 画像の保存に使用します）。（Firebase Storage を使うには Blaze プランが必要です）。gs://<>.firebasestorage.app というようなストレージができたことを確認。
-4. **サービスアカウントキーの取得**: プロジェクト → プロジェクト設定 → サービスアカウント → 「新しい秘密鍵の生成」→ ダウンロードしたファイルを `serviceAccountKey.json` という名前に変更して、プロジェクトルートに配置。
-
-### 4. セットアップとデプロイ
-
-#### 4.1 Firebase 設定ファイルの作成
-```bash
-# テンプレートをコピーして firebase.js を作成
-cp firebase.js.example firebase.js
-```
-
-#### 4.2 Firebase 設定情報の取得
-
-以下のコマンドを実行して、設定情報を取得します：
-```bash
-firebase apps:sdkconfig WEB --project YOUR_PROJECT_ID
-```
-
-> **📝 YOUR_PROJECT_ID**: 手順1で作成したプロジェクトID（例: `my-hackathon-2025`）を入力してください。
-
-出力例：
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.firebasestorage.app",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890"
-};
-```
-
-> **📋 手順**: 上記の出力を `firebase.js` にコピー＆ペーストしてください。
-
-
-| 設定項目 | 説明 | 取得元 |
-|---------|------|--------|
-| `apiKey` | Firebase API キー | `firebase apps:sdkconfig` の出力 |
-| `authDomain` | 認証ドメイン | `{projectId}.firebaseapp.com` |
-| `projectId` | Firebase プロジェクト ID | Firebase Console のプロジェクト設定 |
-| `storageBucket` | Cloud Storage バケット | `{projectId}.firebasestorage.app` |
-| `messagingSenderId` | FCM 送信者 ID | `firebase apps:sdkconfig` の出力 |
-| `appId` | Firebase アプリ ID | `firebase apps:sdkconfig` の出力 |
-
-#### 4.3 依存関係のインストール
-```bash
-npm install
-```
-
-#### 4.4 管理者アカウントのセットアップ
-```bash
-# 対話式で管理者ID、パスワード、許可メールアドレスを入力
-npm run setup
-
-# (任意) デモデータの投入
-npm run demo-data
-```
-
-#### 4.5 ビルドとデプロイ
-```bash
-# デプロイ先のプロジェクトを設定
-firebase use <PROJECT_ID>
-
-# ビルドとデプロイ
-npm run build && firebase deploy
-```
-
-> **📝 初回デプロイ時の確認**
-> - 「Cloud Storage for Firebase needs an IAM Role to use cross-service rules. Grant the new role? (Y/n)」→ `Y` を入力
-> - 「How many days do you want to keep container images before they're deleted?」→ `1` (デフォルト) を入力
+> 📝 **ターミナルの開き方**:
+> - **Mac**: Finder → アプリケーション → ユーティリティ → ターミナル
+> - **Windows**: スタートメニュー → 「cmd」と検索 → コマンドプロンプト
 
 ---
 
-## 📝 運用方法
+### 1. ソースコードのダウンロード
+
+1. [GitHub リポジトリ](https://github.com/kkitase/hackathon-builder) にアクセス
+2. 緑色の「Code」ボタン → 「Download ZIP」をクリック
+3. ダウンロードした ZIP を解凍
+4. ターミナルで解凍したフォルダに移動:
+```bash
+cd hackathon-builder
+```
+### 2. Firebase プロジェクトの作成
+
+<a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a> で新しいプロジェクトを作成します。
+
+1. 「新しい Firebase プロジェクトを作成」をクリック
+2. プロジェクト名を入力（例: `my-hackathon`）
+3. Google Analytics は任意で設定
+4. 「プロジェクトを作成」をクリック
+
+### 3. Firebase サービスの有効化
+
+作成したプロジェクトで、以下のサービスを有効化します：
+
+**1. Firestore**
+
+構築 → 「Firestore Database」→ データベースの作成 → Standard エディション → `asia-northeast1` → 本番環境モードで開始する
+
+**2. Authentication**
+
+構築 → 「Authentication」→ 始める → **Google** → プロジェクトのサポートメールの設定 → 有効にする
+
+**3. Storage**
+
+構築 → 「Storage」→ プロジェクトをアップグレード → Cloud請求先アカウントを構築する → Cloud請求先アカウントをリンク → 使ってみる → すべてのロケーション → `asia-northeast1` → 本番環境モードで開始する
+
+> ⚠️ **Storage を `asia-northeast1` で使用するには Blaze プラン（従量制）へのアップグレードが必要です。** 小〜中規模のサイトであれば費用はほとんどかかりませんが、利用状況により課金が発生する場合があります。
+
+### 4. サービスアカウントキーのダウンロード
+
+1. <a href="https://console.firebase.google.com/" target="_blank">Firebase Console</a> → ⚙️ プロジェクト設定 → 「サービスアカウント」タブ
+2. 「新しい秘密鍵の生成」をクリック
+3. ダウンロードしたファイルを `serviceAccountKey.json` という名前に変更し、解凍したフォルダ（`hackathon-builder`）に配置
+
+> 📝 **補足**: `serviceAccountKey.json` は Firebase プロジェクトごとに固有のファイルです。このファイルに含まれるプロジェクト ID によって、`npm run reset-data` や `npm run delete-project` などのデータ管理コマンドの対象プロジェクトが決定されます。
+
+### 5. 初期化とデプロイ
+
+```bash
+# 対話形式で初期化（作成したFirebaseプロジェクトを選択）
+npm run init
+```
+
+`npm run init` は以下を対話形式で行います：
+1. 依存関係のインストール
+2. Firebase CLI のセットアップ
+3. **作成済みプロジェクトの選択**
+4. ハッカソン情報の入力（タイトル・概要）
+5. `firebase.js` の自動生成
+6. 管理者アカウントの設定
+7. **デプロイの実行確認**（Y を選択するとそのままデプロイ）
+
+> **📝 初回デプロイ時の確認**
+> - 「Cloud Storage for Firebase needs an IAM Role...」→ `Y` を入力
+> - 「How many days do you want to keep container images...」→ `1` を入力
+
+---
+
+## 運用方法
 
 - **管理画面**: デプロイされたURLの `/admin.html` にアクセスしてください。
 - **ログイン**: 
@@ -152,9 +140,22 @@ npm run build && firebase deploy
 
 ---
 
-## 🛠 開発者向け
+## 開発者向け
 - **開発サーバー**: `npm run dev` でローカル確認が可能です。
-- **詳細仕様書**: プロジェクトの詳細な要件定義は [docs/PRD.md](docs/PRD.md) を参照してください。
 - **セットアップツール**: `tools/` フォルダに初期設定用のスクリプトがまとめられています。
 - **セキュリティルール**: `firestore.rules` で管理者以外の書き込みを禁止しています。
 - **SSRテンプレート**: `functions/template.html` が SSR のベースとなります。
+
+---
+
+## コマンド一覧
+
+- **`npm run init`**: 対話形式で初期設定を行います（依存関係のインストール、Firebase CLI セットアップ、プロジェクト選択、ハッカソン情報入力、`firebase.js` 生成、管理者設定、デプロイ確認）
+- **`npm run deploy`**: ビルドと Firebase へのデプロイを実行します
+- **`npm run dev`**: ローカル開発サーバーを起動します
+- **`npm run reset-data`**: コンテンツと参加者データを初期化します（管理者情報は保持）
+- **`npm run delete-project`**: Firebase プロジェクトを完全削除します（Firestore、Authentication、Storage、Hosting、Cloud Functions、GCP プロジェクト、ローカル設定ファイル）
+
+> ⚠️ **注意**: `reset-data` と `delete-project` は元に戻せません。実行前にプロジェクト ID の入力と「DELETE」の確認が必要です。
+
+> 📝 **補足**: プロジェクト削除には `gcloud` CLI が必要です。削除されたプロジェクトは30日間の猶予期間があり、`gcloud projects undelete PROJECT_ID` で復元可能です。

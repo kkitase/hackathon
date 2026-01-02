@@ -7,7 +7,7 @@ description: セキュリティ監査と機密情報定点チェック
 1. **機密情報の探索 (Secret Scanning)**
    - `apiKey`, `password`, `secret`, `token`, `private_key` などのキーワードで全ファイルを検索する。
    - 特に `tools/setup.js` や `auth-utils.js` などの認証周りのファイルにテスト用の値がハードコードされていないか確認する。
-   - 以前使用していたパスワード（例: `JetSki#555`）などが残っていないか確認する。
+   - 以前使用していたパスワードなどが残っていないか確認する。
 
 2. **Git 追跡状態の確認 (Git Tracking Audit)**
    - 以下のファイルが `git ls-files` に含まれていないか（誤って `git add` されていないか）確認する。

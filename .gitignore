@@ -21,6 +21,7 @@ serviceAccountKey.json
 
 # Firebase 設定ファイル (API キー含む)
 firebase.js
+.firebaserc
 
-# ドキュメント
-docs/PRD.md
+# ドキュメント（内部用）
+docs/

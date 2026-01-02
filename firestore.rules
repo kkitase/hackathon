@@ -25,10 +25,10 @@ service cloud.firestore {
       // 閲覧：ログイン済みユーザーなら誰でも可能（他者の概要を確認するため）
       allow read: if request.auth != null;
       
-      // 作成：ログイン済み、かつ自身のメールアドレスでの登録、かつ必須項目あり
+      // 作成：ログイン済み、かつ自身のメールアドレスでの登録、かつ必須項目あり（role は任意）
       allow create: if request.auth != null && 
                        request.auth.token.email == email &&
-                       request.resource.data.keys().hasAll(['lastName', 'firstName', 'email', 'company', 'organization', 'role', 'dataConsent', 'createdAt']) &&
+                       request.resource.data.keys().hasAll(['lastName', 'firstName', 'email', 'company', 'organization', 'dataConsent', 'createdAt']) &&
                        request.resource.data.email == email;
       
       // 更新：自身のデータ、または「いいね」の更新のみ可能
