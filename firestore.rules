@@ -19,5 +19,35 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // 参加者登録・管理
+    match /participants/{email} {
+      // 閲覧：ログイン済みユーザーなら誰でも可能（他者の概要を確認するため）
+      allow read: if request.auth != null;
+      
+      // 作成：ログイン済み、かつ自身のメールアドレスでの登録、かつ必須項目あり
+      allow create: if request.auth != null && 
+                       request.auth.token.email == email &&
+                       request.resource.data.keys().hasAll(['lastName', 'firstName', 'email', 'company', 'organization', 'role', 'dataConsent', 'createdAt']) &&
+                       request.resource.data.email == email;
+      
+      // 更新：自身のデータ、または「いいね」の更新のみ可能
+      allow update: if request.auth != null && 
+                       (request.auth.token.email == email || 
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount', 'commentCount']));
+      
+      // 削除：自身または管理者のみ
+      allow delete: if request.auth != null && 
+                       (request.auth.token.email == email || isAdmin());
+
+      // コメントサブコレクション
+      match /comments/{commentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null && 
+                         request.resource.data.userEmail == request.auth.token.email;
+        allow update, delete: if request.auth != null && 
+                                 (resource.data.userEmail == request.auth.token.email || isAdmin());
+      }
+    }
   }
 }

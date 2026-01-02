@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase.js";
+import { auth, db, storage } from "./firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
 import {
   doc,
@@ -6,6 +6,7 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
+  arrayRemove,
   serverTimestamp,
 } from "firebase/firestore";
 import {
@@ -59,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetBtn = document.getElementById("reset-btn");
   const saveStatus = document.getElementById("save-status");
 
-  let currentTab = "overview";
+  let currentTab = "hero";
   let hasChanges = false;
 
   // カスタムモーダルダイアログを表示
@@ -71,11 +72,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const modal = document.createElement("div");
     modal.id = "custom-modal";
     modal.innerHTML = `
-      <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: flex; align-items: center; justify-content: center;">
-        <div style="background: white; padding: 2rem; border-radius: 1rem; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-          <h3 style="margin-bottom: 1rem; color: #ef4444; font-size: 1.25rem;">${title}</h3>
-          <p style="margin-bottom: 1.5rem; color: #374151; line-height: 1.6;">${message}</p>
-          <button id="modal-close-btn" style="width: 100%; padding: 0.75rem; background: var(--grad-main); color: white; border: none; border-radius: 0.5rem; font-size: 1rem; cursor: pointer;">閉じる</button>
+      <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 2rem; border-radius: 1.5rem; max-width: 400px; box-shadow: var(--shadow-lg); border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 1rem; color: #ef4444; font-size: 1.25rem; font-family: 'Outfit', sans-serif; font-weight: 800;">${title}</h3>
+          <p style="margin-bottom: 1.5rem; color: var(--text-main); line-height: 1.6;">${message}</p>
+          <button id="modal-close-btn" class="btn btn-primary" style="width: 100%;">閉じる</button>
         </div>
       </div>
     `;
@@ -258,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const generatePrizesHtml = (items) => `
         <div class="fade-in">
             <h2 style="font-size: 1.75rem; margin-bottom: 2rem;">プライズ</h2>
-            <div style="display: grid; gap: 1.5rem;">
+            <div class="judge-grid">
                 ${items
                   .map(
                     (p) => `
@@ -266,7 +267,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <h3 style="color: var(--primary); margin-bottom: 0.5rem;">${
                       p.title
                     }</h3>
-                    <div>${parseMarkdown(p.description)}</div>
+                    <div style="font-size: 0.9375rem; line-height: 1.6;">${parseMarkdown(
+                      p.description
+                    )}</div>
                 </div>`
                   )
                   .join("")}
@@ -336,9 +339,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // フォーム入力監視
   const markChanged = () => {
+    // 即時保存が行われるタブではグローバルの「未保存の変更」フラグを立てない
+    if (currentTab === "projects" || currentTab === "admins") return;
     hasChanges = true;
     updateSaveButtonState();
   };
+
+  formContainer.addEventListener("input", markChanged);
+  formContainer.addEventListener("change", markChanged);
 
   // フォームをレンダリング
   const renderForm = async (tabName) => {
@@ -517,15 +525,21 @@ document.addEventListener("DOMContentLoaded", () => {
                 }</textarea>
             </div>
             <div class="form-group">
-                <label>SNS用画像 (og:image) URL</label>
+                <label>SNS用画像 (og:image) URL / アップロード</label>
                 <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem;">
-                    <input type="text" class="form-input" id="field-social-image" value="${
-                      s.ogImage
-                    }" placeholder="https://example.com/image.jpg" />
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" class="form-input" id="field-social-image" value="${
+                          s.ogImage
+                        }" placeholder="https://example.com/image.jpg" />
+                        <label class="btn" style="background: var(--grad-main); color: white; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center;">
+                            アップロード
+                            <input type="file" id="field-social-image-file" accept="image/*" style="display: none;" />
+                        </label>
+                    </div>
                     <div class="social-image-preview" style="width: 240px; height: 126px; border-radius: 0.5rem; background: #e2e8f0; background-image: url('${
                       s.ogImage
                     }'); background-size: cover; background-position: center; border: 1px solid var(--border); flex-shrink: 0;"></div>
-                    <p style="font-size: 0.75rem; color: var(--text-muted);">1200x630px 推奨。画像の直接リンクを入力してください。</p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">1200x630px 推奨。ファイルをアップロードすると自動的に URL がセットされます。</p>
                 </div>
             </div>
             <div class="form-group" style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1rem;">
@@ -570,6 +584,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         (email) => `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--background); border-radius: 0.5rem; margin-bottom: 0.5rem;">
                             <span>${maskEmail(email)}</span>
+                            <button type="button" class="delete-admin-btn btn-sm" data-email="${email}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
                         </div>
                     `
                       )
@@ -594,16 +609,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
     formContainer.innerHTML = html;
 
-    // 入力フィールドに変更検知を設定
-    formContainer.querySelectorAll("input, textarea").forEach((el) => {
-      el.addEventListener("input", markChanged);
-    });
-    formContainer.querySelectorAll('input[type="checkbox"]').forEach((el) => {
-      el.addEventListener("change", markChanged);
-    });
+    formContainer
+      .querySelectorAll(".field-avatar-file")
+      .forEach((input) => handleImageUpload(input, "", "avatar-preview"));
 
-    // 画像アップロードの処理（共通化または追加）
-    const handleImageUpload = (fileInput, hiddenInputId, previewClass) => {
+    // プロジェクト（旧参加者）リストの表示制御
+    if (tabName === "projects") {
+      renderParticipantsList();
+      // プロジェクトタブでは標準の保存・リセットボタンを非表示にする（管理動線が異なるため）
+      document.querySelector(".admin-actions").style.display = "none";
+    } else {
+      document.querySelector(".admin-actions").style.display = "flex";
+    }
+
+    const socialInput = document.getElementById("field-social-image-file");
+    if (socialInput) {
+      socialInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const { ref, uploadBytes, getDownloadURL } = await import(
+          "firebase/storage"
+        );
+        const fileName = `ogp/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, fileName);
+
+        const statusLabel = e.target.parentElement;
+        const originalText = statusLabel.textContent;
+        statusLabel.textContent = "アップ中...";
+        statusLabel.style.pointerEvents = "none";
+
+        try {
+          const snapshot = await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+
+          const urlInput = document.getElementById("field-social-image");
+          const preview = document.querySelector(".social-image-preview");
+
+          if (urlInput) urlInput.value = downloadURL;
+          if (preview) preview.style.backgroundImage = `url('${downloadURL}')`;
+
+          markChanged();
+          statusLabel.textContent = "完了！";
+          setTimeout(() => {
+            statusLabel.textContent = originalText;
+            statusLabel.style.pointerEvents = "auto";
+          }, 2000);
+        } catch (err) {
+          console.error("Upload failed:", err);
+          alert("アップロードに失敗しました。");
+          statusLabel.textContent = originalText;
+          statusLabel.style.pointerEvents = "auto";
+        }
+      });
+    }
+
+    // 画像アップロードの処理
+    function handleImageUpload(fileInput, hiddenInputId, previewClass) {
       fileInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -622,16 +684,13 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          // OGPは 1200x630 が一般的だが、ここではプレビュー用にリサイズ
           const width = hiddenInputId === "field-social-image" ? 1200 : 150;
           const height = hiddenInputId === "field-social-image" ? 630 : 150;
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
 
-          // 中心を切り抜き or フィット
           if (hiddenInputId === "field-social-image") {
-            // アスペクト比を維持してカバー
             const scale = Math.max(width / img.width, height / img.height);
             const x = width / 2 - (img.width / 2) * scale;
             const y = height / 2 - (img.height / 2) * scale;
@@ -644,8 +703,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
           const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8);
-
-          // 修正点: ブロック内の要素を優先的に探す（複数項目ある場合に対応）
           const itemBlock = fileInput.closest(".item-block");
           const hiddenInput = hiddenInputId
             ? document.getElementById(hiddenInputId)
@@ -662,18 +719,9 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         reader.readAsDataURL(file);
       });
-    };
+    }
 
-    formContainer
-      .querySelectorAll(".field-avatar-file")
-      .forEach((input) => handleImageUpload(input, "", "avatar-preview"));
-    const socialInput = document.getElementById("field-social-image-file");
-    if (socialInput)
-      handleImageUpload(
-        socialInput,
-        "field-social-image",
-        "social-image-preview"
-      );
+    // 追加ボタンのイベント設定
 
     // 追加ボタンのイベント設定
     setupAddButtons(tabName);
@@ -728,6 +776,25 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
       }
+
+      // 削除ボタンのイベント設定
+      formContainer.querySelectorAll(".delete-admin-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const email = btn.getAttribute("data-email");
+          if (confirm(`管理者 ${email} を削除してもよろしいですか？`)) {
+            try {
+              await updateDoc(doc(db, "config", "admin"), {
+                authorizedEmails: arrayRemove(email),
+              });
+              showModal("成功", `${email} を管理者リストから削除しました。`);
+              await renderForm("admins");
+            } catch (err) {
+              console.error("Admin deletion failed:", err);
+              alert("管理者の削除に失敗しました。");
+            }
+          }
+        });
+      });
     }
 
     // Social 画像 URL 入力時のプレビュー同期
@@ -925,6 +992,11 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.classList.add("active");
       currentTab = btn.getAttribute("data-target");
       pageTitle.textContent = `${btn.textContent}の編集`;
+
+      // タブ切り替え時に「未保存の変更」フラグをリセット
+      hasChanges = false;
+      updateSaveButtonState();
+
       await renderForm(currentTab);
     });
   });
@@ -1078,6 +1150,418 @@ document.addEventListener("DOMContentLoaded", () => {
       await renderForm(currentTab);
     });
   })();
+
+  // 参加者リストのレンダリング
+  async function renderParticipantsList() {
+    formContainer.innerHTML =
+      '<div class="admin-loading">参加者データを読み込み中...</div>';
+
+    try {
+      const { collection, getDocs, orderBy, query } = await import(
+        "firebase/firestore"
+      );
+      const q = query(
+        collection(db, "participants"),
+        orderBy("createdAt", "desc")
+      );
+      const querySnapshot = await getDocs(q);
+
+      const participants = [];
+      querySnapshot.forEach((doc) => {
+        participants.push({ id: doc.id, ...doc.data() });
+      });
+
+      if (participants.length === 0) {
+        formContainer.innerHTML =
+          '<p style="text-align: center; color: var(--text-muted); padding: 3rem;">参加者はまだ登録されていません。</p>';
+        return;
+      }
+
+      const statusLabels = {
+        書類確認中: "書類確認中",
+        受付完了: "受付完了",
+        一次審査中: "一次審査中",
+        二次審査中: "二次審査中",
+        ファイナリスト: "ファイナリスト",
+        入賞者: "入賞者",
+        落選: "落選",
+        辞退: "辞退",
+        その他: "その他",
+      };
+
+      let html = `
+        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="font-size: 1.125rem; font-weight: 700;">登録者一覧 (${participants.length}名)</h3>
+          <button id="export-csv-btn" class="btn btn-sm" style="background: #e2e8f0; color: var(--text-main); font-weight: 600;">CSVエクスポート</button>
+        </div>
+        <div style="overflow-x: auto; background: white; border-radius: 0.75rem; border: 1px solid var(--border);">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+            <thead>
+              <tr style="background: #f8fafc; border-bottom: 1px solid var(--border); text-align: left;">
+                <th style="padding: 1rem;">氏名 / 所属</th>
+                <th style="padding: 1rem;">チーム / 人数</th>
+                <th style="padding: 1rem;">ステータス</th>
+                <th style="padding: 1rem;">スライド / 同意</th>
+                <th style="padding: 1rem;">登録日</th>
+                <th style="padding: 1rem;">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      participants.forEach((p) => {
+        const createdAt = p.createdAt?.toDate
+          ? p.createdAt.toDate().toLocaleDateString("ja-JP")
+          : "-";
+        html += `
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 1rem;">
+              <div style="font-weight: 700; color: var(--text-main);">${
+                p.name || "-"
+              }</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${
+                p.company || "-"
+              }<br>${p.organization || "-"}</div>
+              <div style="font-size: 0.75rem; margin-top: 0.25rem;"><a href="mailto:${
+                p.email
+              }" style="color: var(--primary); text-decoration: none;">${
+          p.email
+        }</a></div>
+            </td>
+            <td style="padding: 1rem;">
+              <div style="font-weight: 600;">${p.teamName || "個人"}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${
+                p.teamSize || "-"
+              }</div>
+            </td>
+            <td style="padding: 1rem;">
+              <select class="status-select" data-id="${
+                p.id
+              }" style="padding: 0.4rem; border-radius: 0.4rem; border: 1px solid var(--border); background: white; font-size: 0.75rem;">
+                ${Object.entries(statusLabels)
+                  .map(
+                    ([val, label]) => `
+                  <option value="${val}" ${
+                      p.status === val ? "selected" : ""
+                    }>${label}</option>
+                `
+                  )
+                  .join("")}
+              </select>
+            </td>
+            <td style="padding: 1rem;">
+              <div style="margin-bottom: 0.25rem;">
+                ${
+                  p.slideUrl
+                    ? `<a href="${p.slideUrl}" target="_blank" style="color: var(--primary); font-size: 0.75rem;">📄 スライド</a>`
+                    : '<span style="color: #cbd5e1; font-size: 0.75rem;">なし</span>'
+                }
+              </div>
+              <div style="font-size: 0.75rem; color: ${
+                p.dataConsent === "yes" ? "#10b981" : "#ef4444"
+              }; font-weight: 600;">
+                同意: ${p.dataConsent === "yes" ? "はい" : "いいえ"}
+              </div>
+            </td>
+            <td style="padding: 1rem; color: var(--text-muted); font-size: 0.75rem;">${createdAt}</td>
+            <td style="padding: 1rem;">
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="edit-btn btn-sm" data-id="${
+                  p.id
+                }" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); border-radius: 0.25rem; cursor: pointer;">編集</button>
+                <button class="delete-btn btn-sm" data-id="${
+                  p.id
+                }" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table></div>`;
+      formContainer.innerHTML = html;
+
+      // ステータス変更イベント
+      formContainer.querySelectorAll(".status-select").forEach((select) => {
+        select.addEventListener("change", async (e) => {
+          const id = e.target.getAttribute("data-id");
+          const newStatus = e.target.value;
+          try {
+            const { doc, updateDoc, serverTimestamp } = await import(
+              "firebase/firestore"
+            );
+            await updateDoc(doc(db, "participants", id), {
+              status: newStatus,
+              updatedAt: serverTimestamp(),
+            });
+            console.log(`Status updated for ${id}: ${newStatus}`);
+
+            // 即時保存の成功を表示
+            saveStatus.textContent = "保存しました！";
+            saveStatus.style.color = "#10b981";
+            setTimeout(() => {
+              if (!hasChanges) {
+                saveStatus.textContent = "保存済み";
+                saveStatus.style.color = "#10b981";
+              }
+            }, 2000);
+          } catch (err) {
+            console.error("Status update failed:", err);
+            alert("ステータスの更新に失敗しました。");
+          }
+        });
+      });
+
+      // 編集ボタンイベント
+      formContainer.querySelectorAll(".edit-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-id");
+          const participant = participants.find((p) => p.id === id);
+          if (participant) openEditModal(participant);
+        });
+      });
+
+      // 削除ボタンイベント
+      formContainer.querySelectorAll(".delete-btn").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-id");
+          if (
+            confirm(
+              "この参加データを削除してもよろしいですか？この操作は取り消せません。"
+            )
+          ) {
+            try {
+              const { doc, deleteDoc } = await import("firebase/firestore");
+              await deleteDoc(doc(db, "participants", id));
+              renderParticipantsList();
+            } catch (err) {
+              console.error("Delete failed:", err);
+              alert("削除に失敗しました。");
+            }
+          }
+        });
+      });
+
+      // CSVエクスポート
+      document
+        .getElementById("export-csv-btn")
+        ?.addEventListener("click", () => {
+          const header = [
+            "氏名",
+            "姓",
+            "名",
+            "メール",
+            "会社名",
+            "所属組織",
+            "役職",
+            "チーム名",
+            "チーム人数",
+            "提出スライド",
+            "個人情報同意",
+            "ステータス",
+            "登録日",
+          ];
+          const rows = participants.map((p) => [
+            p.name || "",
+            p.lastName || "",
+            p.firstName || "",
+            p.email || "",
+            p.company || "",
+            p.organization || "",
+            p.role || "",
+            p.teamName || "",
+            p.teamSize || "",
+            p.slideUrl || "",
+            p.dataConsent || "",
+            statusLabels[p.status] || p.status,
+            p.createdAt?.toDate
+              ? p.createdAt.toDate().toLocaleString("ja-JP")
+              : "",
+          ]);
+
+          const csvContent = [header, ...rows]
+            .map((e) =>
+              e
+                .map((field) => `"${String(field).replace(/"/g, '""')}"`)
+                .join(",")
+            )
+            .join("\n");
+
+          const blob = new Blob(["\uFEFF" + csvContent], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const link = document.createElement("a");
+          const url = URL.createObjectURL(blob);
+          link.setAttribute("href", url);
+          link.setAttribute(
+            "download",
+            `participants_${new Date().toISOString().split("T")[0]}.csv`
+          );
+          link.style.visibility = "hidden";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        });
+    } catch (err) {
+      console.error("Participants load failed:", err);
+      formContainer.innerHTML = `<p style="color: #ef4444; padding: 2rem;">エラーが発生しました: ${err.message}</p>`;
+    }
+  }
+
+  // 編集モーダルの表示
+  function openEditModal(p) {
+    const modal = document.createElement("div");
+    modal.id = "edit-participant-modal";
+    modal.className = "modal";
+    modal.style.display = "flex";
+    modal.innerHTML = `
+      <div class="modal-overlay"></div>
+      <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header">
+          <h2>参加者情報の編集</h2>
+          <button class="modal-close" id="edit-modal-close">&times;</button>
+        </div>
+        <form id="edit-participant-form" class="register-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>姓</label>
+              <input type="text" name="lastName" value="${
+                p.lastName || ""
+              }" required />
+            </div>
+            <div class="form-group">
+              <label>名</label>
+              <input type="text" name="firstName" value="${
+                p.firstName || ""
+              }" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>会社名</label>
+              <input type="text" name="company" value="${
+                p.company || ""
+              }" required />
+            </div>
+            <div class="form-group">
+              <label>所属組織</label>
+              <input type="text" name="organization" value="${
+                p.organization || ""
+              }" required />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>役職</label>
+              <input type="text" name="role" value="${p.role || ""}" required />
+            </div>
+            <div class="form-group">
+              <label>メールアドレス</label>
+              <input type="email" name="email" value="${
+                p.email || ""
+              }" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>参加動機</label>
+            <textarea name="motivation" rows="3">${
+              p.motivation || ""
+            }</textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>チーム名</label>
+              <input type="text" name="teamName" value="${p.teamName || ""}" />
+            </div>
+            <div class="form-group">
+              <label>チーム人数</label>
+              <select name="teamSize">
+                <option value="">選択してください</option>
+                <option value="undecided" ${
+                  p.teamSize === "undecided" ? "selected" : ""
+                }>未定</option>
+                ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                  .map(
+                    (n) =>
+                      `<option value="${n}" ${
+                        p.teamSize == n ? "selected" : ""
+                      }>${n}人</option>`
+                  )
+                  .join("")}
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>提出スライド URL</label>
+            <input type="url" name="slideUrl" value="${
+              p.slideUrl || ""
+            }" placeholder="https://..." />
+          </div>
+          <div class="consent-group">
+            <div style="padding: 1rem; background: #f8f9fa; border-radius: 0.5rem; margin-bottom: 1rem;">
+              <p style="font-size: 0.875rem; line-height: 1.6; color: var(--text-main); margin: 0 0 1rem 0;">
+                ご記入いただいたご登録情報は、協賛パートナーへ提供される場合がございます。お客様のご情報は、各社から商品、サービス、セミナー等に関するご案内をお送りするために使用いたします。個人情報は各社の個人情報保護ポリシーに則って適切に扱われます。
+              </p>
+              <div style="display: flex; gap: 2rem; align-items: center;">
+                <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 0.5rem;">
+                  <input type="radio" name="dataConsent" value="yes" ${
+                    p.dataConsent === "yes" ? "checked" : ""
+                  } required />
+                  <span>はい</span>
+                </label>
+                <label style="display: inline-flex; align-items: center; cursor: pointer; gap: 0.5rem;">
+                  <input type="radio" name="dataConsent" value="no" ${
+                    p.dataConsent === "no" ? "checked" : ""
+                  } required />
+                  <span>いいえ</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions" style="margin-top: 2rem;">
+            <button type="button" class="btn btn-secondary" id="edit-modal-cancel">キャンセル</button>
+            <button type="submit" class="btn btn-primary">更新する</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const closeModal = () => modal.remove();
+    modal.querySelector("#edit-modal-close").onclick = closeModal;
+    modal.querySelector("#edit-modal-cancel").onclick = closeModal;
+    modal.querySelector(".modal-overlay").onclick = closeModal;
+
+    modal.querySelector("#edit-participant-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const updates = {
+        lastName: formData.get("lastName"),
+        firstName: formData.get("firstName"),
+        name: `${formData.get("lastName")} ${formData.get("firstName")}`,
+        company: formData.get("company"),
+        organization: formData.get("organization"),
+        role: formData.get("role"),
+        email: formData.get("email"),
+        motivation: formData.get("motivation"),
+        teamName: formData.get("teamName"),
+        teamSize: formData.get("teamSize"),
+        slideUrl: formData.get("slideUrl"),
+        dataConsent: formData.get("dataConsent"),
+        updatedAt: serverTimestamp(),
+      };
+
+      try {
+        const { doc, updateDoc } = await import("firebase/firestore");
+        await updateDoc(doc(db, "participants", p.id), updates);
+        closeModal();
+        renderParticipantsList();
+      } catch (err) {
+        console.error("Update failed:", err);
+        alert("更新に失敗しました。");
+      }
+    };
+  }
 
   // ログアウトボタンの追加（DASHBOARD タイトルの横など）
   const dashboardTitle = document.querySelector(".admin-sidebar h2");

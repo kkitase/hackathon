@@ -76,6 +76,31 @@ import { chromium } from "playwright";
   await page.waitForTimeout(3000);
 
   console.log("✅ サウナハッカソンのデータ入力が完了しました！");
+
+  // 参加者登録のデモ
+  console.log("参加者登録のデモを実行中...");
+  await page.click("#register-btn-header");
+  await page.waitForSelector("#register-form", { timeout: 10000 });
+
+  await page.fill("#reg-last-name", "田中");
+  await page.fill("#reg-first-name", "太郎");
+  await page.fill("#reg-email", "tanaka@example.com");
+  await page.fill("#reg-company", "サウナテック株式会社");
+  await page.fill("#reg-organization", "開発部");
+  await page.fill("#reg-role", "エンジニア");
+  await page.fill("#reg-motivation", "サウナとAIの融合に興味があります！");
+  await page.fill("#reg-team-name", "ととのい隊");
+  await page.selectOption("select[name='teamSize']", "3");
+  await page.fill(
+    "#reg-slide-url",
+    "https://docs.google.com/presentation/d/demo"
+  );
+  await page.check("#consent-yes");
+
+  await page.click("#register-submit-btn");
+  await page.waitForSelector(".register-message", { timeout: 10000 });
+  console.log("✅ デモ参加者の登録が完了しました！");
+
   console.log("ブラウザで結果を確認してください。5秒後に閉じます...");
   await page.waitForTimeout(5000);
   await browser.close();

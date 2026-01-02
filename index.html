@@ -6,7 +6,6 @@
     <title>{{OGP_TITLE}}</title>
     <meta name="description" content="{{OGP_DESCRIPTION}}" />
     <style>
-      /* 初期表示時のチラつき防止 */
       .nav-links > * {
         visibility: hidden;
       }
@@ -14,7 +13,6 @@
         visibility: visible;
       }
     </style>
-    <!-- Social Meta Tags (OGP) -->
     <meta id="meta-og-title" property="og:title" content="{{OGP_TITLE}}" />
     <meta
       id="meta-og-description"
@@ -80,7 +78,7 @@
             >
             <div id="user-profile" style="display: none">
               <a href="#" class="btn btn-dark btn-sm" id="register-btn-header"
-                >申し込み</a
+                >参加登録</a
               >
               <div id="user-avatar"></div>
             </div>
@@ -101,13 +99,13 @@
           >
             <h1 id="hero-title">{{HERO_TITLE}}</h1>
             <p id="hero-subtitle">{{HERO_SUBTITLE}}</p>
-            <a
-              id="hero-cta"
-              href="#"
-              class="btn btn-primary"
-              style="margin-top: 1.5rem; display: none"
-              >{{HERO_CTA}}</a
+            <button
+              id="register-modal-btn"
+              class="btn btn-secondary"
+              style="margin-top: 1.5rem"
             >
+              参加登録
+            </button>
           </div>
           <div class="hero-image">
             <img
@@ -129,11 +127,311 @@
               transition: opacity 0.3s ease;
             "
           >
-            <!-- Firestore からのデータ読み込み完了後にコンテンツが表示されます -->
+            <!-- Content Area -->
           </div>
         </div>
       </section>
     </main>
+
+    <div id="register-modal" class="modal" style="display: none">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div
+          class="modal-header"
+          style="justify-content: space-between; align-items: center"
+        >
+          <div style="display: flex; align-items: center; gap: 1rem">
+            <h2 id="register-modal-title" style="margin: 0">
+              ハッカソン参加登録
+            </h2>
+            <span
+              id="register-modal-status"
+              style="
+                display: none;
+                padding: 0.25rem 0.75rem;
+                background: #ef4444;
+                color: white;
+                border-radius: 99px;
+                font-size: 0.75rem;
+                font-weight: 800;
+              "
+            ></span>
+          </div>
+          <button
+            class="modal-close"
+            id="register-modal-close"
+            style="margin: 0"
+          >
+            &times;
+          </button>
+        </div>
+        <form id="register-form" class="register-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="reg-last-name"
+                >姓 <span class="required">*</span></label
+              >
+              <input type="text" id="reg-last-name" name="lastName" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-first-name"
+                >名 <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                id="reg-first-name"
+                name="firstName"
+                required
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="reg-company"
+                >会社名 <span class="required">*</span></label
+              >
+              <input type="text" id="reg-company" name="company" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-organization"
+                >所属組織（部署名） <span class="required">*</span></label
+              >
+              <input
+                type="text"
+                id="reg-organization"
+                name="organization"
+                required
+              />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="reg-role">役職 <span class="required">*</span></label>
+              <input type="text" id="reg-role" name="role" required />
+            </div>
+            <div class="form-group">
+              <label for="reg-email"
+                >メールアドレス <span class="required">*</span></label
+              >
+              <input type="email" id="reg-email" name="email" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-project-name">プロジェクト名</label>
+            <input
+              type="text"
+              id="reg-project-name"
+              name="projectName"
+              placeholder="開発予定のサービス名やプロダクト名"
+            />
+          </div>
+          <div class="form-group">
+            <label for="reg-motivation">プロジェクト概要</label>
+            <textarea
+              id="reg-motivation"
+              name="motivation"
+              rows="3"
+              placeholder="プロジェクトの内容や目標を簡単に記載してください"
+            ></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="reg-team-name">チーム名</label>
+              <input type="text" id="reg-team-name" name="teamName" />
+            </div>
+            <div class="form-group">
+              <label for="reg-team-size">チーム人数</label>
+              <select id="reg-team-size" name="teamSize">
+                <option value="">選択してください</option>
+                <option value="undecided">未定</option>
+                <option value="recruiting">メンバー募集中</option>
+                <option value="1">1人</option>
+                <option value="2">2人</option>
+                <option value="3">3人</option>
+                <option value="4">4人</option>
+                <option value="5">5人</option>
+                <option value="6">6人</option>
+                <option value="7">7人</option>
+                <option value="8">8人</option>
+                <option value="9">9人</option>
+                <option value="10">10人</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="reg-slide-url">提出スライド</label>
+            <input
+              type="url"
+              id="reg-slide-url"
+              name="slideUrl"
+              placeholder="https://docs.google.com/presentation/d/..."
+            />
+          </div>
+          <div class="consent-group">
+            <div
+              style="
+                padding: 1rem;
+                background: #f8f9fa;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+              "
+            >
+              <p
+                style="
+                  font-size: 0.875rem;
+                  line-height: 1.6;
+                  color: var(--text-main);
+                  margin: 0 0 1rem 0;
+                "
+              >
+                ご記入いただいたご登録情報は、協賛パートナーへ提供される場合がございます。お客様のご情報は、各社から商品、サービス、セミナー等に関するご案内をお送りするために使用いたします。個人情報は各社の個人情報保護ポリシーに則って適切に扱われます。
+              </p>
+              <div style="display: flex; gap: 2rem; align-items: center">
+                <label
+                  style="
+                    display: inline-flex;
+                    align-items: center;
+                    cursor: pointer;
+                    gap: 0.5rem;
+                  "
+                >
+                  <input
+                    type="radio"
+                    id="consent-yes"
+                    name="dataConsent"
+                    value="yes"
+                    required
+                  />
+                  <span>はい</span>
+                </label>
+                <label
+                  style="
+                    display: inline-flex;
+                    align-items: center;
+                    cursor: pointer;
+                    gap: 0.5rem;
+                  "
+                >
+                  <input
+                    type="radio"
+                    id="consent-no"
+                    name="dataConsent"
+                    value="no"
+                    required
+                  />
+                  <span>いいえ</span>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              id="register-cancel-btn"
+            >
+              キャンセル
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              id="register-submit-btn"
+            >
+              登録する
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="register-withdraw-btn"
+              style="
+                display: none;
+                background: #ef4444;
+                border-color: #ef4444;
+                color: white;
+              "
+            >
+              取り下げ
+            </button>
+          </div>
+          <div
+            id="register-message"
+            class="register-message"
+            style="display: none"
+          ></div>
+        </form>
+      </div>
+    </div>
+
+    <!-- コメント表示・投稿モーダル -->
+    <div id="comment-modal" class="modal" style="display: none">
+      <div class="modal-overlay"></div>
+      <div
+        class="modal-content"
+        style="max-width: 500px; padding: 0; overflow: hidden"
+      >
+        <div
+          class="modal-header"
+          style="border-bottom: 1px solid var(--border)"
+        >
+          <h2 id="comment-modal-title" style="font-size: 1.125rem">コメント</h2>
+          <button id="comment-modal-close" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 1.25rem">
+          <div id="comment-list">
+            <!-- コメントがここに動的に追加されます -->
+          </div>
+
+          <div class="comment-input-area">
+            <div class="comment-avatar" id="current-user-comment-avatar">?</div>
+            <textarea
+              id="comment-text"
+              class="comment-textarea"
+              placeholder="コメントを入力..."
+              rows="1"
+            ></textarea>
+            <button
+              id="submit-comment-btn"
+              class="btn btn-primary comment-submit-btn"
+              disabled
+            >
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path
+                  d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"
+                  fill="currentColor"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- いいねしたユーザー一覧モーダル -->
+    <div id="like-list-modal" class="modal" style="display: none">
+      <div class="modal-overlay"></div>
+      <div
+        class="modal-content"
+        style="max-width: 400px; padding: 0; overflow: hidden"
+      >
+        <div
+          class="modal-header"
+          style="border-bottom: 1px solid var(--border)"
+        >
+          <h2 style="font-size: 1.125rem">いいねした人</h2>
+          <button id="like-list-modal-close" class="modal-close">
+            &times;
+          </button>
+        </div>
+        <div
+          class="modal-body"
+          style="padding: 0; max-height: 400px; overflow-y: auto"
+        >
+          <div id="like-user-list">
+            <!-- ユーザーリストがここに動的に追加されます -->
+          </div>
+        </div>
+      </div>
+    </div>
 
     <footer
       style="

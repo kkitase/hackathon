@@ -26,10 +26,10 @@
           DASHBOARD
         </h2>
         <nav class="admin-nav">
-          <button class="admin-nav-btn" data-target="hero">ヒーロー</button>
-          <button class="admin-nav-btn active" data-target="overview">
-            概要
+          <button class="admin-nav-btn active" data-target="hero">
+            ヒーロー
           </button>
+          <button class="admin-nav-btn" data-target="overview">概要</button>
           <button class="admin-nav-btn" data-target="updates">更新情報</button>
           <button class="admin-nav-btn" data-target="schedule">
             スケジュール
@@ -41,22 +41,20 @@
           <button class="admin-nav-btn" data-target="projects">
             プロジェクト
           </button>
-          <button class="admin-nav-btn" data-target="social">Social</button>
           <button
             class="admin-nav-btn"
             data-target="admins"
-            style="
-              border-top: 1px solid var(--border);
-              margin-top: 1rem;
-              color: var(--primary);
-            "
+            style="border-top: 1px solid var(--border); margin-top: 1rem"
           >
             管理者設定
           </button>
+          <button class="admin-nav-btn" data-target="social">Social設定</button>
         </nav>
         <div style="margin-top: auto; padding: 1rem">
           <a
-            href="./index.html"
+            href="/"
+            target="_blank"
+            rel="noopener"
             style="
               color: #94a3b8;
               text-decoration: none;
@@ -80,8 +78,16 @@
             align-items: center;
           "
         >
-          <h1 id="page-title" style="font-size: 1.5rem; font-weight: 800">
-            概要の編集
+          <h1
+            id="page-title"
+            style="
+              font-size: 1.5rem;
+              font-weight: 800;
+              font-family: 'Outfit', sans-serif;
+              color: var(--text-main);
+            "
+          >
+            ヒーローの編集
           </h1>
           <div
             id="save-status"
