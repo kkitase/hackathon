@@ -7,9 +7,9 @@ admin.initializeApp();
 
 // デフォルトのヒーローデータ
 const defaultHeroData = {
-  title: "第3回 AI Agent Hackathon with Google Cloud",
+  title: "Hackathon Builder",
   subtitle:
-    "未来を創るAIエージェントの競演。Google Cloudのパワーを使い、次世代のソリューションを開発せよ。",
+    "Firebase で爆速構築。理想のハッカソンイベントを、今すぐ始めましょう。",
 };
 
 // OGP SSR Function (東京リージョン)
@@ -29,9 +29,9 @@ exports.ssr = onRequest({ region: "asia-northeast1" }, async (req, res) => {
 
       let robotsTxt;
       if (allowIndexing) {
-        robotsTxt = `# Hackathon Launch Kit - robots.txt\n# 検索エンジンに公開: 有効\n\nUser-agent: *\nDisallow: /admin.html\nAllow: /\n`;
+        robotsTxt = `# Hackathon Builder - robots.txt\n# 検索エンジンに公開: 有効\n\nUser-agent: *\nDisallow: /admin.html\nAllow: /\n`;
       } else {
-        robotsTxt = `# Hackathon Launch Kit - robots.txt\n# 検索エンジンに公開: 無効\n\nUser-agent: *\nDisallow: /\n`;
+        robotsTxt = `# Hackathon Builder - robots.txt\n# 検索エンジンに公開: 無効\n\nUser-agent: *\nDisallow: /\n`;
       }
 
       res.set("Content-Type", "text/plain");
@@ -45,9 +45,9 @@ exports.ssr = onRequest({ region: "asia-northeast1" }, async (req, res) => {
     const ogpData = ogpSnap.exists
       ? ogpSnap.data()
       : {
-          ogTitle: "第3回 AI Agent Hackathon with Google Cloud",
+          ogTitle: "Hackathon Builder",
           ogDescription:
-            "未来を創るAIエージェントの競演。Google Cloudのパワーを使い、次世代のソリューションを開発せよ。",
+            "Firebase で爆速構築。理想のハッカソンイベントを、今すぐ始めましょう。",
           ogImage: "",
         };
 

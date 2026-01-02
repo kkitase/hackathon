@@ -34,7 +34,8 @@ const getStatusLabel = (status) => {
     "1st_review": "一次審査中",
     "2nd_review": "二次審査中",
     finalist: "ファイナリスト",
-    award_winner: "入賞者",
+    winner_grand: "最優秀賞",
+    winner_excellence: "優秀賞",
     rejected: "落選",
     withdrawn: "辞退",
     others: "その他",
@@ -115,10 +116,10 @@ const defaultTabData = {
 
 // デフォルトのヒーローデータ
 const defaultHeroData = {
-  title: "第3回 AI Agent Hackathon with Google Cloud",
+  title: "ABC AI Hackathon",
   subtitle:
-    "未来を創るAIエージェントの競演。Google Cloudのパワーを使い、次世代のソリューションを開発せよ。",
-  ctaText: "今すぐ申し込む →",
+    "未来を創るAIエージェントを構築。Google の AI、Gemini や、Google Cloud を駆使し、次世代のアプリケーションを開発",
+  ctaText: "参加登録",
 };
 
 // Firestore からコンテンツを取得（キャッシュ付き）
@@ -445,14 +446,21 @@ const toggleLike = async (docId) => {
     const isLiked = likes.includes(user.email);
 
     if (isLiked) {
+      // いいねを解除
+      const likedBy = data.likedBy || {};
+      delete likedBy[user.email.replace(/\./g, "_")];
       await updateDoc(docRef, {
         likes: arrayRemove(user.email),
         likeCount: increment(-1),
+        likedBy: likedBy,
       });
     } else {
+      // いいねを追加（displayNameも保存）
+      const emailKey = user.email.replace(/\./g, "_");
       await updateDoc(docRef, {
         likes: arrayUnion(user.email),
         likeCount: increment(1),
+        [`likedBy.${emailKey}`]: user.displayName || "匿名ユーザー",
       });
     }
 
@@ -529,13 +537,6 @@ const openCommentModal = (docId, projectName) => {
             <div class="comment-bubble">
               <div class="comment-user-info">
                 <span class="comment-user">${c.userName || "ユーザー"}</span>
-                ${
-                  c.company
-                    ? `<span class="comment-user-org">${c.company} ${
-                        c.role || ""
-                      }</span>`
-                    : ""
-                }
               </div>
               <div class="comment-content">${c.content}</div>
               <div class="comment-date">${date}</div>
@@ -578,48 +579,33 @@ const openLikeListModal = async (docId) => {
       return;
     }
 
-    // 30件まで一括取得 (Firestoreの limit)
-    const limitedEmails = emails.slice(0, 30);
-    const q = query(
-      collection(db, "participants"),
-      where(documentId(), "in", limitedEmails)
-    );
-    const querySnapshot = await getDocs(q);
-    const users = [];
-    querySnapshot.forEach((doc) => {
-      users.push(doc.data());
+    // likedBy マップからユーザー名を取得（新形式）
+    const likedBy = data.likedBy || {};
+
+    listContainer.innerHTML = "";
+    emails.slice(0, 30).forEach((email) => {
+      const emailKey = email.replace(/\./g, "_");
+      const displayName = likedBy[emailKey] || email.split("@")[0];
+      const initial = displayName.charAt(0).toUpperCase();
+      const div = document.createElement("div");
+      div.className = "like-user-item";
+      div.innerHTML = `
+        <div class="like-user-avatar">${initial}</div>
+        <div class="like-user-info">
+          <span class="like-user-name">${displayName}</span>
+        </div>
+      `;
+      listContainer.appendChild(div);
     });
 
-    if (users.length === 0) {
-      listContainer.innerHTML =
-        '<div style="padding: 2rem; text-align: center;"><p class="text-muted">ユーザー情報が見つかりませんでした</p></div>';
-    } else {
-      listContainer.innerHTML = "";
-      users.forEach((u) => {
-        const initial = u.name ? u.name.charAt(0) : "?";
-        const div = document.createElement("div");
-        div.className = "like-user-item";
-        div.innerHTML = `
-          <div class="like-user-avatar">${initial}</div>
-          <div class="like-user-info">
-            <span class="like-user-name">${u.name || "匿名ユーザー"}</span>
-            <span class="like-user-org">${u.company || ""} ${
-          u.role || ""
-        }</span>
-          </div>
-        `;
-        listContainer.appendChild(div);
-      });
-
-      if (emails.length > 30) {
-        const moreDiv = document.createElement("div");
-        moreDiv.style.padding = "1rem";
-        moreDiv.style.textAlign = "center";
-        moreDiv.style.fontSize = "0.875rem";
-        moreDiv.style.color = "var(--text-muted)";
-        moreDiv.textContent = `他 ${emails.length - 30} 人`;
-        listContainer.appendChild(moreDiv);
-      }
+    if (emails.length > 30) {
+      const moreDiv = document.createElement("div");
+      moreDiv.style.padding = "1rem";
+      moreDiv.style.textAlign = "center";
+      moreDiv.style.fontSize = "0.875rem";
+      moreDiv.style.color = "var(--text-muted)";
+      moreDiv.textContent = `他 ${emails.length - 30} 人`;
+      listContainer.appendChild(moreDiv);
     }
   } catch (error) {
     console.error("Fetch likes users error:", error);

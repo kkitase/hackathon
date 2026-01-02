@@ -1,7 +1,5 @@
 {
-  "projects": {
-    "default": "hackathon-kkitase"
-  },
+  "projects": {},
   "targets": {},
   "etags": {}
 }

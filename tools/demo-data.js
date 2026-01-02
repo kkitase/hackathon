@@ -1,4 +1,19 @@
-import { chromium } from "playwright";
+/**
+ * Hackathon Builder - デモデータ投入スクリプト
+ *
+ * 目的:
+ * ローカル開発サーバー(npm run dev)上で動作している管理画面を自動操作し、
+ * サンプルデータを入力します。手動での入力を省略して動作を確認したい時に使用します。
+ *
+ * 事前準備:
+ * 1. npm run dev を実行して開発サーバーを起動しておく
+ * 2. このスクリプトを実行し、ブラウザが開いたらログインを済ませる
+ *
+ * 実行方法:
+ * node tools/demo-data.js
+ */
+
+import { chromium } from "@playwright/test";
 
 (async () => {
   const browser = await chromium.launch({ headless: false });
@@ -33,7 +48,7 @@ import { chromium } from "playwright";
   await page.click('[data-target="overview"]');
   await page.waitForSelector("#field-description", { timeout: 10000 });
 
-  // 概要セクションには field-title がない。field-description, field-theme, field-tech のみ
+  // 概要セクションの入力
   await page.fill(
     "#field-description",
     "サウナ文化とテクノロジーを融合させ、ウェルネス領域の新たな可能性を追求するハッカソンです。心身の「ととのい」を科学的にサポートするプロダクトを開発します。"

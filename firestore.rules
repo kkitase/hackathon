@@ -34,7 +34,7 @@ service cloud.firestore {
       // 更新：自身のデータ、または「いいね」の更新のみ可能
       allow update: if request.auth != null && 
                        (request.auth.token.email == email || 
-                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount', 'commentCount']));
+                        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'likeCount', 'likedBy', 'commentCount']));
       
       // 削除：自身または管理者のみ
       allow delete: if request.auth != null && 

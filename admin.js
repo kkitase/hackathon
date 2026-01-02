@@ -395,6 +395,9 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (item, i) => `
                     <div class="item-block" data-index="${i}">
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                            <button type="button" class="delete-item-btn" data-type="schedule" data-index="${i}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
+                        </div>
                         <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <input type="date" class="form-input field-date" value="${toInputFormat(
                               item.date
@@ -422,6 +425,9 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (j, i) => `
                     <div class="item-block" data-index="${i}">
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                            <button type="button" class="delete-item-btn" data-type="judges" data-index="${i}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
+                        </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <input type="text" class="form-input field-name" value="${j.name}" placeholder="名前" />
                             <input type="text" class="form-input field-title" value="${j.title}" placeholder="肩書き" />
@@ -449,6 +455,9 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (u, i) => `
                     <div class="item-block" data-index="${i}">
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                            <button type="button" class="delete-item-btn" data-type="updates" data-index="${i}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
+                        </div>
                         <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <input type="date" class="form-input field-date" value="${toInputFormat(
                               u.date
@@ -468,6 +477,9 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (p, i) => `
                     <div class="item-block" data-index="${i}">
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                            <button type="button" class="delete-item-btn" data-type="prizes" data-index="${i}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
+                        </div>
                         <input type="text" class="form-input field-title" value="${p.title}" placeholder="賞のタイトル" style="margin-bottom: 1rem;" />
                         <textarea class="form-input field-desc" style="min-height: 60px;" placeholder="詳細">${p.description}</textarea>
                         <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
@@ -481,6 +493,9 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (r, i) => `
                     <div class="item-block" data-index="${i}">
+                        <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                            <button type="button" class="delete-item-btn" data-type="rules" data-index="${i}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
+                        </div>
                         <textarea class="form-input field-text form-textarea" style="min-height: 80px;" placeholder="ルール項目（Markdown対応）">${r.text}</textarea>
                         <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border);" />
                     </div>`
@@ -493,10 +508,15 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(
             (f, i) => `
                     <div class="item-block" data-index="${i}">
-                        <label style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">FAQ項目（Markdown対応）</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <label style="font-size: 0.875rem; color: var(--text-muted);">FAQ項目（Markdown対応）</label>
+                            <button type="button" class="delete-item-btn" data-type="faq" data-index="${i}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
+                        </div>
                         <textarea class="form-input field-content form-textarea" style="min-height: 120px;" placeholder="## 質問タイトル\n\n回答の内容をここに記述...">${
                           f.content ||
-                          `## ${f.question || ""}\n\n${f.answer || ""}`
+                          (f.question || f.answer
+                            ? `## ${f.question || ""}\n\n${f.answer || ""}`
+                            : "")
                         }</textarea>
                         <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border);" />
                     </div>`
@@ -726,6 +746,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // 追加ボタンのイベント設定
     setupAddButtons(tabName);
 
+    // 削除ボタンのイベント設定
+    setupDeleteButtons(tabName);
+
     // 管理者追加ボタンの個別設定
     if (tabName === "admins") {
       const addAdminBtn = document.getElementById("add-admin-email-btn");
@@ -861,7 +884,7 @@ document.addEventListener("DOMContentLoaded", () => {
             break;
           case "faq":
             if (!data.faq) data.faq = [];
-            data.faq.push({ question: "", answer: "" });
+            data.faq.push({ content: "" });
             break;
         }
         // Firestore に保存（一時的に）
@@ -878,6 +901,34 @@ document.addEventListener("DOMContentLoaded", () => {
         markChanged();
       });
     }
+  };
+
+  // 削除ボタンの設定
+  const setupDeleteButtons = (tabName) => {
+    formContainer.querySelectorAll(".delete-item-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const type = btn.getAttribute("data-type");
+        const index = parseInt(btn.getAttribute("data-index"), 10);
+
+        if (!confirm("この項目を削除してもよろしいですか？")) return;
+
+        const data = await loadStructuredData();
+        if (data[type] && Array.isArray(data[type])) {
+          data[type].splice(index, 1);
+          try {
+            await setDoc(
+              doc(db, "config", "data"),
+              { ...data, updatedAt: serverTimestamp() },
+              { merge: true }
+            );
+          } catch (err) {
+            console.warn("Firestore 保存に失敗:", err);
+          }
+          renderForm(tabName);
+          markChanged();
+        }
+      });
+    });
   };
 
   // 現在のフォームからデータを収集
@@ -1178,15 +1229,16 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const statusLabels = {
-        書類確認中: "書類確認中",
-        受付完了: "受付完了",
-        一次審査中: "一次審査中",
-        二次審査中: "二次審査中",
-        ファイナリスト: "ファイナリスト",
-        入賞者: "入賞者",
-        落選: "落選",
-        辞退: "辞退",
-        その他: "その他",
+        pending: "書類確認中",
+        accept: "受付完了",
+        "1st_review": "一次審査中",
+        "2nd_review": "二次審査中",
+        finalist: "ファイナリスト",
+        winner_grand: "最優秀賞",
+        winner_excellence: "優秀賞",
+        rejected: "落選",
+        withdrawn: "辞退",
+        others: "その他",
       };
 
       let html = `
@@ -1242,7 +1294,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   .map(
                     ([val, label]) => `
                   <option value="${val}" ${
-                      p.status === val ? "selected" : ""
+                      p.status === val || p.status === label ? "selected" : ""
                     }>${label}</option>
                 `
                   )
