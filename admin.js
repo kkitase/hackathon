@@ -376,22 +376,30 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>`;
         break;
       case "overview":
+        const ov = data.overview || { description: "", theme: "", tech: "" };
         html = `
                     <div class="form-group">
                         <label>説明文（Markdown対応）</label>
-                        <textarea class="form-input form-textarea" id="field-description" style="min-height: 100px;">${data.overview.description}</textarea>
+                        <textarea class="form-input form-textarea" id="field-description" style="min-height: 100px;">${
+                          ov.description || ""
+                        }</textarea>
                     </div>
                     <div class="form-group">
                         <label>テーマ（Markdown対応）</label>
-                        <textarea class="form-input form-textarea" id="field-theme" style="min-height: 100px;">${data.overview.theme}</textarea>
+                        <textarea class="form-input form-textarea" id="field-theme" style="min-height: 100px;">${
+                          ov.theme || ""
+                        }</textarea>
                     </div>
                     <div class="form-group">
                         <label>対象技術（Markdown対応）</label>
-                        <textarea class="form-input form-textarea" id="field-tech" style="min-height: 100px;">${data.overview.tech}</textarea>
+                        <textarea class="form-input form-textarea" id="field-tech" style="min-height: 100px;">${
+                          ov.tech || ""
+                        }</textarea>
                     </div>`;
         break;
       case "schedule":
-        html = `<div id="schedule-items">${data.schedule
+        const scheduleItems = data.schedule || [];
+        html = `<div id="schedule-items">${scheduleItems
           .map(
             (item, i) => `
                     <div class="item-block" data-index="${i}">
@@ -421,7 +429,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button type="button" id="add-schedule-item" class="btn" style="background: #e2e8f0; color: var(--text-main);">+ 項目を追加</button>`;
         break;
       case "judges":
-        html = `<div id="judge-items">${data.judges
+        const judgeItems = data.judges || [];
+        html = `<div id="judge-items">${judgeItems
           .map(
             (j, i) => `
                     <div class="item-block" data-index="${i}">
@@ -451,7 +460,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button type="button" id="add-judge-item" class="btn" style="background: #e2e8f0; color: var(--text-main);">+ 審査員を追加</button>`;
         break;
       case "updates":
-        html = `<div id="update-items">${data.updates
+        const updateItems = data.updates || [];
+        html = `<div id="update-items">${updateItems
           .map(
             (u, i) => `
                     <div class="item-block" data-index="${i}">
@@ -473,7 +483,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button type="button" id="add-update-item" class="btn" style="background: #e2e8f0; color: var(--text-main);">+ 更新情報を追加</button>`;
         break;
       case "prizes":
-        html = `<div id="prize-items">${data.prizes
+        const prizeItems = data.prizes || [];
+        html = `<div id="prize-items">${prizeItems
           .map(
             (p, i) => `
                     <div class="item-block" data-index="${i}">
@@ -489,7 +500,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button type="button" id="add-prize-item" class="btn" style="background: #e2e8f0; color: var(--text-main);">+ 賞を追加</button>`;
         break;
       case "rules":
-        html = `<div id="rule-items">${data.rules
+        const ruleItems = data.rules || [];
+        html = `<div id="rule-items">${ruleItems
           .map(
             (r, i) => `
                     <div class="item-block" data-index="${i}">
@@ -504,7 +516,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button type="button" id="add-rule-item" class="btn" style="background: #e2e8f0; color: var(--text-main);">+ ルールを追加</button>`;
         break;
       case "faq":
-        html = `<div id="faq-items">${data.faq
+        const faqItems = data.faq || [];
+        html = `<div id="faq-items">${faqItems
           .map(
             (f, i) => `
                     <div class="item-block" data-index="${i}">

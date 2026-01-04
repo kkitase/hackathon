@@ -192,7 +192,8 @@ async function main() {
 
     console.log("\n✅ データリセットが完了しました！");
     console.log("\n📌 管理者情報 (config/admin) は保持されています。");
-    console.log("   管理画面から新しいコンテンツを作成してください。\n");
+    console.log("   管理画面から新しいコンテンツを作成してください。");
+    console.log(`\n🔗 管理画面: https://${projectId}.web.app/admin.html\n`);
   } catch (error) {
     console.error("\n❌ エラーが発生しました:", error.message);
     console.error(error);

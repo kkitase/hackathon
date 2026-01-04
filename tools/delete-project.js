@@ -389,7 +389,12 @@ async function main() {
     console.log("✅ プロジェクトの完全削除が完了しました！");
     console.log("═".repeat(60));
 
-    console.log("\n📌 次のステップ:");
+    console.log(`\n🔗 Firebase Console で確認もできます:`);
+    console.log(
+      `   https://console.firebase.google.com/project/${projectId}\n`
+    );
+
+    console.log("📌 次のステップ:");
     console.log("   - 新しいプロジェクトを開始する場合:");
     console.log("     npm run init\n");
   } catch (error) {
