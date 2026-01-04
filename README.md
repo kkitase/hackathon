@@ -51,6 +51,7 @@ cd hackathon-builder
 | **Firestore** | 構築 → 「Firestore Database」→ データベースの作成 → Standard エディション →`asia-northeast1` → 本番環境モードで開始する |
 | **Authentication** | 構築 → 「Authentication」→ 始める → **Google** →　プロジェクトのサポートメールの設定 →　有効にする |
 | **Storage** | 構築 → 「Storage」→ プロジェクトをアップグレード → Cloud請求先アカウントを構築する → Cloud請求先アカウントをリンク → 使ってみる → すべてのロケーション →`asia-northeast1` → 本番環境モードで開始する |
+m| **Cloud Functions** | *デプロイ時に自動有効化* |
 
 > ⚠️ **Storage と Cloud Functions を使用するには Blaze プラン（従量制）へのアップグレードが必要です。Google Cloud の課金アカウントを設定してください。小〜中規模のサイトであれば費用はほとんどかかりませんが、利用状況により課金が発生する場合があります。ご了承ください。**
 
@@ -59,6 +60,8 @@ cd hackathon-builder
 1. Firebase Console → ⚙️ プロジェクト設定 → 「サービスアカウント」タブ
 2. 「新しい秘密鍵の生成」をクリック
 3. ダウンロードしたファイルを `serviceAccountKey.json` として、ルートフォルダに配置
+
+> 📝 **補足**: `serviceAccountKey.json` は Firebase プロジェクトごとに固有のファイルです。このファイルに含まれるプロジェクト ID によって、`npm run reset-data` や `npm run delete-project` などのデータ管理コマンドの対象プロジェクトが決定されます。
 
 ### 5. 初期化
 
@@ -108,3 +111,32 @@ npm run deploy
 - **セットアップツール**: `tools/` フォルダに初期設定用のスクリプトがまとめられています。
 - **セキュリティルール**: `firestore.rules` で管理者以外の書き込みを禁止しています。
 - **SSRテンプレート**: `functions/template.html` が SSR のベースとなります。
+
+---
+
+## 🔄 データ管理コマンド
+
+| コマンド | 説明 |
+|---------|------|
+| `npm run reset-data` | コンテンツと参加者データを初期化（管理者情報は保持） |
+| `npm run delete-project` | Firebase プロジェクトを完全削除 |
+
+### `npm run reset-data`
+- データを初期状態にリセットします
+- **削除対象**: コンテンツデータ、参加者データ、OGP 画像
+- **保持対象**: 管理者アカウント情報
+
+### `npm run delete-project`
+- Firebase プロジェクトとすべてのサービスを完全に削除します
+- **削除対象**:
+  - Firestore: すべてのコレクション（config, participants, users など）
+  - Authentication: すべてのユーザー
+  - Storage: すべてのファイル
+  - Hosting: デプロイされたサイト
+  - Cloud Functions: すべての関数
+  - Firebase/GCP プロジェクト自体（`gcloud` CLI を使用）
+  - ローカルファイル: `firebase.js`, `.firebaserc`, `serviceAccountKey.json`
+
+> ⚠️ **注意**: これらのコマンドは元に戻せません。実行前にプロジェクト ID の入力と「DELETE」の確認が必要です。
+
+> 📝 **補足**: プロジェクト削除には `gcloud` CLI が必要です。削除されたプロジェクトは30日間の猶予期間があり、`gcloud projects undelete PROJECT_ID` で復元可能です。

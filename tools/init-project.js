@@ -57,6 +57,7 @@ async function main() {
   console.log("  1. 依存関係のインストール");
   console.log("  2. Firebase CLI のセットアップ");
   console.log("  3. Firebase プロジェクトの選択");
+  console.log("  3.5 ハッカソン情報の入力（タイトル・概要）");
   console.log("  4. firebase.js の自動生成");
   console.log("  5. サービスアカウントキーの確認");
   console.log("  6. 管理者アカウントの設定\n");
@@ -240,6 +241,30 @@ async function main() {
   success(`プロジェクト: ${projectId}`);
 
   // ===========================================
+  // ハッカソン情報の入力
+  // ===========================================
+  step("3.5", "ハッカソン情報の入力");
+
+  console.log("   Hero セクションに表示する情報を入力してください:\n");
+  const hackathonTitle = await question(
+    "   ハッカソンのタイトル (例: AI Innovation Hackathon 2026): "
+  );
+  const hackathonSubtitle = await question(
+    "   概要・サブタイトル (例: 未来を創るAIアプリケーションを開発しよう): "
+  );
+  const hackathonCta = await question(
+    "   CTAボタンのテキスト (例: 今すぐ参加登録, 空欄でスキップ): "
+  );
+
+  // ハッカソン情報を後で保存するためにグローバル変数に格納
+  const hackathonInfo = {
+    title: hackathonTitle || "Hackathon 2026",
+    subtitle: hackathonSubtitle || "新しいアイデアで未来を切り拓こう",
+    ctaText: hackathonCta || "参加登録",
+  };
+  success("ハッカソン情報を設定しました");
+
+  // ===========================================
   // Step 4: Webアプリ登録と firebase.js 生成
   // ===========================================
   step(4, "firebase.js の生成");
@@ -324,6 +349,36 @@ async function main() {
   });
 
   success("管理者情報を Firestore に保存");
+
+  // ハッカソン情報（Hero）を Firestore に保存
+  console.log("   ハッカソン情報を Firestore に保存中...");
+  await db.doc("config/data").set(
+    {
+      hero: hackathonInfo,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+
+  await db.doc("config/content").set(
+    {
+      hero: hackathonInfo,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+
+  // OGP 情報も初期設定
+  await db.doc("config/ogp").set(
+    {
+      ogTitle: hackathonInfo.title,
+      ogDescription: hackathonInfo.subtitle,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+
+  success("ハッカソン情報を Firestore に保存");
 
   // ===========================================
   // 完了
