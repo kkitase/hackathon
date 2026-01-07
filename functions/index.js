@@ -75,7 +75,11 @@ exports.ssr = onRequest({ region: "asia-northeast1" }, async (req, res) => {
       .replace(/{{HERO_CTA}}/g, heroData.ctaText || "");
 
     // 6. 完成した HTML を返却
-    res.set("Cache-Control", "public, max-age=600, s-maxage=1200");
+    // OGP の即時反映を優先するため、ブラウザキャッシュを短くし、CDNキャッシュ(s-maxage)も最小限（60秒）に設定
+    res.set(
+      "Cache-Control",
+      "public, max-age=60, s-maxage=60, must-revalidate"
+    );
     res.status(200).send(html);
   } catch (error) {
     console.error("SSR Error:", error);

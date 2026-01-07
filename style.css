@@ -385,8 +385,10 @@ header {
 
 .hero-image img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   border-radius: 2rem;
+  aspect-ratio: 3/2;
 }
 
 @media (max-width: 992px) {

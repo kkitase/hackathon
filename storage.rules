@@ -14,6 +14,11 @@ service firebase.storage {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /hero/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     // デフォルトは拒否
     match /{allPaths=**} {
       allow read, write: if false;

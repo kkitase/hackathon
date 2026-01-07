@@ -5,6 +5,7 @@ dist/
 *.log
 test-results/
 .DS_Store
+hackathon-builder.code-workspace
 
 # Firebase
 firebase-debug.log*
@@ -23,5 +24,12 @@ serviceAccountKey.json
 firebase.js
 .firebaserc
 
-# ドキュメント（内部用）
+# ドキュメント
 docs/
+
+# AI アシスタント設定
+CLAUDE.md
+.agent/
+
+# メモ・下書き
+note/

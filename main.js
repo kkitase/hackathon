@@ -120,6 +120,7 @@ const defaultHeroData = {
   subtitle:
     "未来を創るAIエージェントを構築。Google の AI、Gemini や、Google Cloud を駆使し、次世代のアプリケーションを開発",
   ctaText: "参加登録",
+  image: "./assets/hero-illustration.jpg",
 };
 
 // Firestore からコンテンツを取得（キャッシュ付き）
@@ -943,10 +944,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (adminLink) adminLink.style.display = "none";
       const logoutBtnHeader = document.getElementById("logout-btn-header");
       if (logoutBtnHeader) logoutBtnHeader.style.display = "none";
-      if (registerBtnHeader) registerBtnHeader.textContent = "参加登録";
+      if (registerBtnHeader) registerBtnHeader.textContent = contentCache?.hero?.ctaText || defaultHeroData.ctaText;
 
       const heroCta = document.getElementById("hero-cta");
-      if (heroCta) heroCta.textContent = defaultHeroData.ctaText;
+      if (heroCta) heroCta.textContent = contentCache?.hero?.ctaText || defaultHeroData.ctaText;
     }
   });
 
@@ -987,6 +988,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const heroTitle = document.getElementById("hero-title");
     const heroSubtitle = document.getElementById("hero-subtitle");
     const heroCta = document.getElementById("hero-cta");
+    const heroImg = document.getElementById("hero-img");
 
     // Firestore からコンテンツを取得
     const content = await getContentFromFirestore();
@@ -997,6 +999,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (heroSubtitle) {
       heroSubtitle.textContent = hero.subtitle || defaultHeroData.subtitle;
+    }
+    // Hero イメージの反映
+    if (heroImg) {
+      heroImg.src = hero.image || defaultHeroData.image;
     }
     // CTA ボタン（テキストが設定されている場合のみ表示）
     if (heroCta) {
@@ -1263,8 +1269,8 @@ document.addEventListener("DOMContentLoaded", () => {
       // ヒーローセクションとヘッダーのボタンをリセット
       const heroCta = document.getElementById("hero-cta");
       const registerBtnHeader = document.getElementById("register-btn-header");
-      if (heroCta) heroCta.textContent = defaultHeroData.ctaText;
-      if (registerBtnHeader) registerBtnHeader.textContent = "参加登録";
+      if (heroCta) heroCta.textContent = contentCache?.hero?.ctaText || defaultHeroData.ctaText;
+      if (registerBtnHeader) registerBtnHeader.textContent = contentCache?.hero?.ctaText || defaultHeroData.ctaText;
 
       if (registerMessage) {
         registerMessage.textContent = "登録を取り下げました。";

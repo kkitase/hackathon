@@ -359,7 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
           title: "",
           subtitle: "",
           ctaText: "",
-          notice: "",
+          image: "",
         };
         html = `
                     <div class="form-group">
@@ -373,6 +373,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="form-group">
                         <label>CTAボタンのテキスト</label>
                         <input type="text" class="form-input" id="field-hero-cta" value="${h.ctaText}" />
+                    </div>
+                    <div class="form-group">
+                        <label>Heroイメージ URL / アップロード</label>
+                        <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem;">
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" class="form-input" id="field-hero-image" value="${h.image || ""}" placeholder="https://example.com/hero.jpg" />
+                                <label class="btn" style="background: var(--grad-main); color: white; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center;">
+                                    アップロード
+                                    <input type="file" id="field-hero-image-file" accept="image/*" style="display: none;" />
+                                </label>
+                            </div>
+                            <div class="hero-image-preview" style="width: 300px; aspect-ratio: 3/2; border-radius: 0.5rem; background: #e2e8f0; background-image: url('${h.image || ""}'); background-size: cover; background-position: center; border: 1px solid var(--border);"></div>
+                            <p style="font-size: 0.75rem; color: var(--text-muted);">推奨サイズ: 1200x800px (3:2)。最大サイズ: 20MB。アップロードすると自動的に画像がセットされます。</p>
+                        </div>
                     </div>`;
         break;
       case "overview":
@@ -641,6 +655,68 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     formContainer.innerHTML = html;
+
+    // Hero イメージアップロード処理
+    const heroImageFileInput = document.getElementById("field-hero-image-file");
+    if (heroImageFileInput) {
+      heroImageFileInput.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const maxSize = 20 * 1024 * 1024; // 20MB
+        if (file.size > maxSize) {
+          showModal("サイズエラー", "画像サイズは20MB以下にしてください。");
+          e.target.value = "";
+          return;
+        }
+
+        const { ref, uploadBytes, getDownloadURL } = await import(
+          "firebase/storage"
+        );
+        const fileName = `hero/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, fileName);
+
+        const uploadBtnLabel = e.target.parentElement;
+        const originalText = uploadBtnLabel.textContent;
+        uploadBtnLabel.textContent = "アップ中...";
+        uploadBtnLabel.style.pointerEvents = "none";
+
+        try {
+          const snapshot = await uploadBytes(storageRef, file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+
+          const urlInput = document.getElementById("field-hero-image");
+          const preview = document.querySelector(".hero-image-preview");
+
+          if (urlInput) urlInput.value = downloadURL;
+          if (preview) preview.style.backgroundImage = `url('${downloadURL}')`;
+
+          markChanged();
+          uploadBtnLabel.textContent = "完了！";
+          setTimeout(() => {
+            uploadBtnLabel.textContent = originalText;
+            uploadBtnLabel.style.pointerEvents = "auto";
+          }, 2000);
+        } catch (err) {
+          console.error("Hero image upload failed:", err);
+          alert("アップロードに失敗しました。");
+          uploadBtnLabel.textContent = originalText;
+          uploadBtnLabel.style.pointerEvents = "auto";
+        }
+      });
+    }
+
+    // Hero イメージ URL 入力時のプレビュー同期
+    const heroImageUrlInput = document.getElementById("field-hero-image");
+    if (heroImageUrlInput) {
+      heroImageUrlInput.addEventListener("input", () => {
+        const url = heroImageUrlInput.value.trim();
+        const preview = document.querySelector(".hero-image-preview");
+        if (preview) {
+          preview.style.backgroundImage = url ? `url('${url}')` : "none";
+        }
+      });
+    }
 
     formContainer
       .querySelectorAll(".field-avatar-file")
@@ -954,6 +1030,7 @@ document.addEventListener("DOMContentLoaded", () => {
           title: document.getElementById("field-hero-title")?.value || "",
           subtitle: document.getElementById("field-hero-subtitle")?.value || "",
           ctaText: document.getElementById("field-hero-cta")?.value || "",
+          image: document.getElementById("field-hero-image")?.value || "",
         };
         break;
       case "overview":

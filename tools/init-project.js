@@ -5,8 +5,8 @@
  */
 
 import { createInterface } from "readline";
-import { execSync, spawn } from "child_process";
-import { existsSync, writeFileSync, readFileSync, mkdirSync } from "fs";
+import { execSync } from "child_process";
+import { existsSync, writeFileSync, readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -19,8 +19,46 @@ const rl = createInterface({
   output: process.stdout,
 });
 
-const question = (prompt) =>
-  new Promise((resolve) => rl.question(prompt, resolve));
+const question = (prompt, defaultValue = null) => {
+  // すでに引数で指定されている場合はスキップ
+  if (
+    defaultValue !== null &&
+    defaultValue !== undefined &&
+    defaultValue !== ""
+  ) {
+    return Promise.resolve(defaultValue);
+  }
+  return new Promise((resolve) => rl.question(prompt, resolve));
+};
+
+// 引数のパース (例: --title "Name" または -t "Name")
+const args = {};
+process.argv.slice(2).forEach((val, index, array) => {
+  if (val.startsWith("-")) {
+    const key = val.replace(/^-+/, "");
+    const nextVal = array[index + 1];
+    if (nextVal && !nextVal.startsWith("-")) {
+      args[key] = nextVal;
+    } else {
+      args[key] = true;
+    }
+  }
+});
+
+// エイリアスの設定
+const getArg = (keys) => {
+  for (const key of keys) {
+    // 直接引数 (--title 等)
+    if (args[key]) return args[key];
+
+    // npm run init --title="xxx" のように渡された場合
+    const envKey = `npm_config_${key.replace(/-/g, "_")}`;
+    if (process.env[envKey] && process.env[envKey] !== "true") {
+      return process.env[envKey];
+    }
+  }
+  return null;
+};
 
 // コマンド実行ヘルパー
 const exec = (cmd, options = {}) => {
@@ -28,6 +66,7 @@ const exec = (cmd, options = {}) => {
     return execSync(cmd, {
       encoding: "utf-8",
       cwd: ROOT_DIR,
+      stdio: ["ignore", "pipe", "ignore"], // stderr を抑制
       ...options,
     }).trim();
   } catch (error) {
@@ -49,7 +88,29 @@ const execShow = (cmd) => {
 const step = (num, text) => console.log(`\n\x1b[36m[${num}]\x1b[0m ${text}`);
 const success = (text) => console.log(`\x1b[32m✓\x1b[0m ${text}`);
 const warn = (text) => console.log(`\x1b[33m⚠\x1b[0m ${text}`);
-const error = (text) => console.log(`\x1b[31m✗\x1b[0m ${text}`);
+const errorLog = (text) => console.log(`\x1b[31m✗\x1b[0m ${text}`);
+
+// 新規プロジェクト作成
+async function createNewProject() {
+  const projectId = await question(
+    "   新しいプロジェクトID: ",
+    getArg(["project", "p", "id"])
+  );
+  const displayName = await question(
+    "   プロジェクト表示名 (Firebase Console用): ",
+    getArg(["project-name", "pn"])
+  );
+  console.log("   プロジェクトを作成中...");
+  const created = execShow(
+    `firebase projects:create ${projectId} -n "${displayName || projectId}"`
+  );
+  if (!created) {
+    errorLog("プロジェクトの作成に失敗しました");
+    rl.close();
+    process.exit(1);
+  }
+  return projectId;
+}
 
 async function main() {
   console.log("\n🚀 \x1b[1mHackathon Builder - オールインワン初期化\x1b[0m\n");
@@ -57,10 +118,10 @@ async function main() {
   console.log("  1. 依存関係のインストール");
   console.log("  2. Firebase CLI のセットアップ");
   console.log("  3. Firebase プロジェクトの選択");
-  console.log("  3.5 ハッカソン情報の入力（タイトル・概要）");
-  console.log("  4. firebase.js の自動生成");
-  console.log("  5. サービスアカウントキーの確認");
-  console.log("  6. 管理者アカウントの設定\n");
+  console.log("  4. ハッカソン情報の入力（タイトル・概要）");
+  console.log("  5. firebase.js の自動生成");
+  console.log("  6. サービスアカウントキーの確認");
+  console.log("  7. 管理者アカウントの設定\n");
   console.log(
     "⚠️  事前に Firebase Console でプロジェクトとサービスを作成してください\n"
   );
@@ -110,73 +171,17 @@ async function main() {
     const allEmails = loginStatus.match(emailRegex) || [];
     const accounts = [...new Set(allEmails)]; // 重複除去
 
-    // 現在のアカウントを特定（"Logged in as" の行）
     const currentMatch = loginStatus.match(
       /Logged in as ([\w.-]+@[\w.-]+\.\w+)/
     );
     const currentEmail = currentMatch ? currentMatch[1] : accounts[0];
-
-    if (accounts.length > 0) {
-      console.log("\n   ログイン済みアカウント:");
-      accounts.forEach((acc, i) => {
-        const marker = acc === currentEmail ? " (現在)" : "";
-        console.log(`   ${i + 1}. ${acc}${marker}`);
-      });
-      console.log(`   0. 別のアカウントでログイン`);
-
-      const choice = await question(
-        "\n   使用するアカウント番号を選択 (Enter で現在のアカウント): "
-      );
-
-      if (choice === "0") {
-        console.log("   ブラウザでログインしてください...");
-        execShow("firebase login:add");
-        // 追加されたアカウントを使用
-        const newLoginStatus = exec("firebase login:list");
-        const newEmails = newLoginStatus.match(emailRegex) || [];
-        const newAccounts = [...new Set(newEmails)];
-        if (newAccounts.length > accounts.length) {
-          // 新しく追加されたアカウントを見つける
-          const newAccount =
-            newAccounts.find((acc) => !accounts.includes(acc)) ||
-            newAccounts[newAccounts.length - 1];
-          execShow(`firebase login:use ${newAccount}`);
-          success(`アカウント切り替え: ${newAccount}`);
-        }
-      } else if (
-        choice &&
-        parseInt(choice) >= 1 &&
-        parseInt(choice) <= accounts.length
-      ) {
-        const selectedAccount = accounts[parseInt(choice) - 1];
-        if (selectedAccount !== currentEmail) {
-          execShow(`firebase login:use ${selectedAccount}`);
-        }
-        success(`アカウント: ${selectedAccount}`);
-      } else {
-        success(`アカウント: ${currentEmail}`);
-      }
-    } else {
-      success("Firebase にログイン済み");
-    }
+    success(`アカウント: ${currentEmail}`);
   }
 
   // ===========================================
   // Step 3: プロジェクト設定
   // ===========================================
   step(3, "Firebase プロジェクトの設定");
-
-  // 現在のアカウントを確認して表示
-  const currentAccount =
-    exec(
-      "firebase login:list 2>/dev/null | grep -E '\\(current\\)' | head -1"
-    ) || exec("firebase login:list 2>/dev/null | grep '@' | head -1");
-  if (currentAccount) {
-    const accountEmail = currentAccount.match(/[\w.-]+@[\w.-]+/);
-    if (accountEmail) {
-      console.log(`   アカウント: ${accountEmail[0]}`);
-    }
-  }
 
   // 既存のプロジェクト一覧を取得
   console.log("   プロジェクト一覧を取得中...");
@@ -200,39 +205,31 @@ async function main() {
     });
     console.log(`   0. 新規プロジェクトを作成`);
 
+    const projectArg = getArg(["project", "p", "id"]);
+    const maxNum = Math.min(projects.length, 10);
+    let defaultChoice = null;
+    if (projectArg) {
+      const idx = projects.findIndex((p) => p.projectId === projectArg);
+      defaultChoice = idx >= 0 ? (idx + 1).toString() : null;
+    }
     const choice = await question(
-      "\n   使用するプロジェクト番号を選択 (0-10): "
+      `\n   使用するプロジェクト番号を選択 (0-${maxNum}): `,
+      defaultChoice
     );
     const num = parseInt(choice);
 
     if (num === 0) {
-      // 新規作成
-      projectId = await question("   新しいプロジェクトID: ");
-      const displayName = await question("   表示名 (例: My Hackathon): ");
-      console.log("   プロジェクトを作成中...");
-      const createResult = exec(
-        `firebase projects:create ${projectId} -n "${displayName || projectId}"`
-      );
-      if (!createResult) {
-        error("プロジェクトの作成に失敗しました");
-        rl.close();
-        process.exit(1);
-      }
+      projectId = await createNewProject();
     } else if (num >= 1 && num <= projects.length) {
       projectId = projects[num - 1].projectId;
     } else {
-      error("無効な選択です");
+      errorLog("無効な選択です");
       rl.close();
       process.exit(1);
     }
   } else {
     // プロジェクトがない場合は新規作成
-    projectId = await question("   新しいプロジェクトID: ");
-    const displayName = await question("   表示名 (例: My Hackathon): ");
-    console.log("   プロジェクトを作成中...");
-    execShow(
-      `firebase projects:create ${projectId} -n "${displayName || projectId}"`
-    );
+    projectId = await createNewProject();
   }
 
   // プロジェクトを使用
@@ -240,20 +237,25 @@ async function main() {
   execShow(`firebase use ${projectId}`);
   success(`プロジェクト: ${projectId}`);
 
+  success("Firebase サービスの初期設定が完了しました");
+
   // ===========================================
   // ハッカソン情報の入力
   // ===========================================
-  step("3.5", "ハッカソン情報の入力");
+  step(4, "ハッカソン情報の入力");
 
   console.log("   Hero セクションに表示する情報を入力してください:\n");
   const hackathonTitle = await question(
-    "   ハッカソンのタイトル (例: AI Innovation Hackathon 2026): "
+    "   ハッカソンのタイトル (例: AI Innovation Hackathon 2026):\n   > ",
+    getArg(["title", "t"])
   );
   const hackathonSubtitle = await question(
-    "   概要・サブタイトル (例: 未来を創るAIアプリケーションを開発しよう): "
+    "   概要・サブタイトル (例: 未来を創るAIアプリケーションを開発しよう):\n   > ",
+    getArg(["subtitle", "s"])
   );
   const hackathonCta = await question(
-    "   CTAボタンのテキスト (例: 今すぐ参加登録, 空欄でスキップ): "
+    "   CTAボタンのテキスト (例: 今すぐ参加登録, 空欄でスキップ):\n   > ",
+    getArg(["cta", "c"])
   );
 
   // ハッカソン情報を後で保存するためにグローバル変数に格納
@@ -261,13 +263,14 @@ async function main() {
     title: hackathonTitle || "Hackathon 2026",
     subtitle: hackathonSubtitle || "新しいアイデアで未来を切り拓こう",
     ctaText: hackathonCta || "参加登録",
+    image: "./assets/hero-illustration.jpg",
   };
   success("ハッカソン情報を設定しました");
 
   // ===========================================
-  // Step 4: Webアプリ登録と firebase.js 生成
+  // Step 5: Webアプリ登録と firebase.js 生成
   // ===========================================
-  step(4, "firebase.js の生成");
+  step(5, "firebase.js の生成");
 
   const firebaseJsPath = resolve(ROOT_DIR, "firebase.js");
 
@@ -285,9 +288,9 @@ async function main() {
   }
 
   // ===========================================
-  // Step 5: サービスアカウントキーの確認
+  // Step 6: サービスアカウントキーの確認
   // ===========================================
-  step(5, "サービスアカウントキーの確認");
+  step(6, "サービスアカウントキーの確認");
 
   const keyPath = resolve(ROOT_DIR, "serviceAccountKey.json");
   if (!existsSync(keyPath)) {
@@ -300,11 +303,10 @@ async function main() {
     console.log(
       "   3. ダウンロードしたファイルを serviceAccountKey.json としてルートに配置"
     );
-    console.log("\n   配置したら Enter を押してください...");
-    await question("");
+    await question("\n   配置したら Enter を押してください... ");
 
     if (!existsSync(keyPath)) {
-      error(
+      errorLog(
         "serviceAccountKey.json が見つかりません。セットアップを中止します。"
       );
       rl.close();
@@ -314,9 +316,9 @@ async function main() {
   success("serviceAccountKey.json を検出");
 
   // ===========================================
-  // Step 6: 管理者アカウントの設定
+  // Step 7: 管理者アカウントの設定
   // ===========================================
-  step(6, "管理者アカウントの設定");
+  step(7, "管理者アカウントの設定");
 
   // Firebase Admin を動的にインポート
   const { initializeApp, cert } = await import("firebase-admin/app");
@@ -330,10 +332,17 @@ async function main() {
 
   success("Firebase Admin に接続");
 
-  const defaultUser = await question("   管理者 ID (例: admin): ");
-  const defaultPass = await question("   管理者パスワード: ");
+  const defaultUser = await question(
+    "   管理者 ID (例: admin):\n   > ",
+    getArg(["admin-user", "user", "u"])
+  );
+  const defaultPass = await question(
+    "   管理者パスワード:\n   > ",
+    getArg(["admin-pass", "pass", "pw"])
+  );
   const emailsInput = await question(
-    "   許可するメールアドレス (カンマ区切り): "
+    "   許可するメールアドレス (カンマ区切り):\n   > ",
+    getArg(["admin-group", "group", "emails", "g", "e"])
   );
 
   const authorizedEmails = emailsInput
@@ -352,14 +361,6 @@ async function main() {
 
   // ハッカソン情報（Hero）を Firestore に保存
   console.log("   ハッカソン情報を Firestore に保存中...");
-  await db.doc("config/data").set(
-    {
-      hero: hackathonInfo,
-      updatedAt: new Date().toISOString(),
-    },
-    { merge: true }
-  );
-
   await db.doc("config/content").set(
     {
       hero: hackathonInfo,
@@ -415,7 +416,9 @@ async function generateFirebaseJs(projectId, outputPath) {
       appId = apps.result[0].appId;
       success(`既存のWebアプリを使用: ${apps.result[0].displayName || appId}`);
     }
-  } catch (e) {}
+  } catch {
+    // アプリ一覧の取得に失敗した場合は新規作成に進む
+  }
 
   // Webアプリがなければ作成
   if (!appId) {
@@ -426,7 +429,7 @@ async function generateFirebaseJs(projectId, outputPath) {
   // SDK 設定を取得
   const sdkConfig = exec(`firebase apps:sdkconfig WEB --project ${projectId}`);
   if (!sdkConfig) {
-    error("SDK 設定の取得に失敗しました");
+    errorLog("SDK 設定の取得に失敗しました");
     return;
   }
 
@@ -467,7 +470,7 @@ async function generateFirebaseJs(projectId, outputPath) {
   }
 
   if (!configContent) {
-    error("SDK 設定のパースに失敗しました");
+    errorLog("SDK 設定のパースに失敗しました");
     console.log("   手動で firebase.js.example をコピーして編集してください");
     return;
   }
@@ -492,7 +495,7 @@ export const googleProvider = new GoogleAuthProvider();
 }
 
 main().catch((err) => {
-  error(err.message);
+  errorLog(err.message);
   rl.close();
   process.exit(1);
 });
