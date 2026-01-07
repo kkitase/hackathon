@@ -29,7 +29,10 @@ docs/
 
 # AI アシスタント設定
 CLAUDE.md
+.claude/
 .agent/
+!.agent/workflows/
+!.agent/rules/
 
 # メモ・下書き
 note/

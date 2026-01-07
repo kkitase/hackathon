@@ -1,11 +1,12 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 管理者かどうかを判定する補助関数 (Google Auth 用に維持)
+    // 管理者かどうかを判定する補助関数
     function isAdmin() {
       return request.auth != null &&
              exists(/databases/$(database)/documents/config/admin) &&
-             (request.auth.token.email in get(/databases/$(database)/documents/config/admin).data.authorizedEmails);
+             (request.auth.token.email in get(/databases/$(database)/documents/config/admin).data.authorizedEmails ||
+              request.auth.token.email == get(/databases/$(database)/documents/config/admin).data.bootstrapEmail);
     }
 
     // 基本設定、コンテンツ、OGP：読み取りはパブリック
@@ -14,10 +15,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // 管理者情報：読み取りもログイン済みユーザーに制限
+    // 管理者情報：読み取りはログイン済みなら許可（再帰的な参照ループを防ぐため）
     match /config/admin {
       allow read: if request.auth != null;
-      allow write: if isAdmin();
+      allow write: if request.auth != null && 
+                      (exists(/databases/$(database)/documents/config/admin) == false || 
+                       isAdmin() || 
+                       request.auth.token.email == get(/databases/$(database)/documents/config/admin).data.bootstrapEmail);
     }
 
     // その他のドキュメント

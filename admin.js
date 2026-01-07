@@ -364,27 +364,37 @@ document.addEventListener("DOMContentLoaded", () => {
         html = `
                     <div class="form-group">
                         <label>メインタイトル</label>
-                        <input type="text" class="form-input" id="field-hero-title" value="${h.title}" />
+                        <input type="text" class="form-input" id="field-hero-title" value="${
+                          h.title
+                        }" />
                     </div>
                     <div class="form-group">
                         <label>サブタイトル（キャッチコピー）</label>
-                        <textarea class="form-input" id="field-hero-subtitle" style="min-height: 80px;">${h.subtitle}</textarea>
+                        <textarea class="form-input" id="field-hero-subtitle" style="min-height: 80px;">${
+                          h.subtitle
+                        }</textarea>
                     </div>
                     <div class="form-group">
                         <label>CTAボタンのテキスト</label>
-                        <input type="text" class="form-input" id="field-hero-cta" value="${h.ctaText}" />
+                        <input type="text" class="form-input" id="field-hero-cta" value="${
+                          h.ctaText
+                        }" />
                     </div>
                     <div class="form-group">
                         <label>Heroイメージ URL / アップロード</label>
                         <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem;">
                             <div style="display: flex; gap: 0.5rem;">
-                                <input type="text" class="form-input" id="field-hero-image" value="${h.image || ""}" placeholder="https://example.com/hero.jpg" />
+                                <input type="text" class="form-input" id="field-hero-image" value="${
+                                  h.image || ""
+                                }" placeholder="https://example.com/hero.jpg" />
                                 <label class="btn" style="background: var(--grad-main); color: white; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: center;">
                                     アップロード
                                     <input type="file" id="field-hero-image-file" accept="image/*" style="display: none;" />
                                 </label>
                             </div>
-                            <div class="hero-image-preview" style="width: 300px; aspect-ratio: 3/2; border-radius: 0.5rem; background: #e2e8f0; background-image: url('${h.image || ""}'); background-size: cover; background-position: center; border: 1px solid var(--border);"></div>
+                            <div class="hero-image-preview" style="width: 300px; aspect-ratio: 3/2; border-radius: 0.5rem; background: #e2e8f0; background-image: url('${
+                              h.image || ""
+                            }'); background-size: cover; background-position: center; border: 1px solid var(--border);"></div>
                             <p style="font-size: 0.75rem; color: var(--text-muted);">推奨サイズ: 1200x800px (3:2)。最大サイズ: 20MB。アップロードすると自動的に画像がセットされます。</p>
                         </div>
                     </div>`;
@@ -606,7 +616,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const adminSnap = await getDoc(doc(db, "config", "admin"));
         const adminData = adminSnap.exists()
           ? adminSnap.data()
-          : { authorizedEmails: [] };
+          : { authorizedEmails: [], defaultUser: "未設定" };
 
         const maskEmail = (email) => {
           if (!email || !email.includes("@")) return email;
@@ -623,22 +633,39 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         html = `
+            <div class="form-group" style="margin-bottom: 2rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border);">
+                <label>基本管理者 (npm run init で設定)</label>
+                <div style="padding: 1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 0.75rem;">
+                    <p style="font-size: 0.875rem; color: var(--text-main); font-weight: 600;">
+                        ID: <span style="color: var(--primary);">${
+                          adminData.defaultUser || "admin"
+                        }</span>
+                    </p>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                        ※このIDとパスワードは初期化時に設定されたものです。
+                    </p>
+                </div>
+            </div>
+
             <div class="form-group">
-                <label>特権管理者（Googleアカウントのメールアドレス）</label>
+                <label>追加管理者（Googleアカウントのメールアドレス）</label>
                 <div id="admin-email-list" style="margin-bottom: 1.5rem;">
-                    ${adminData.authorizedEmails
+                    ${(adminData.authorizedEmails || [])
                       .map(
                         (email) => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--background); border-radius: 0.5rem; margin-bottom: 0.5rem;">
-                            <span>${maskEmail(email)}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--background); border-radius: 0.5rem; margin-bottom: 0.5rem; border: 1px solid var(--border);">
+                            <span style="font-size: 0.875rem;">${maskEmail(
+                              email
+                            )}</span>
                             <button type="button" class="delete-admin-btn btn-sm" data-email="${email}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: #fee2e2; color: #ef4444; border: 1px solid #fecaca; border-radius: 0.25rem; cursor: pointer;">削除</button>
                         </div>
                     `
                       )
                       .join("")}
                     ${
+                      !adminData.authorizedEmails ||
                       adminData.authorizedEmails.length === 0
-                        ? '<p style="color: var(--text-muted); font-size: 0.875rem;">登録された管理ユーザーはいません。</p>'
+                        ? '<p style="color: var(--text-muted); font-size: 0.875rem;">追加された管理ユーザーはいません。</p>'
                         : ""
                     }
                 </div>
@@ -646,9 +673,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     <input type="email" id="new-admin-email" class="form-input" placeholder="example@gmail.com" />
                     <button type="button" id="add-admin-email-btn" class="btn btn-primary" style="white-space: nowrap;">追加</button>
                 </div>
-                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">※追加されたメールアドレスを持つGoogleユーザーは、この管理画面にアクセス可能になります。</p>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
+                    ※追加されたメールアドレスを持つユーザーは、Google ログインで管理画面にアクセス可能になります。
+                </p>
             </div>
         `;
+        break;
         break;
       default:
         html = "<p>準備中...</p>";
@@ -1287,8 +1317,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // ログイン成功
       loginOverlay.style.display = "none";
-      await syncTabsData();
-      await renderForm(currentTab);
+
+      // すでに表示済みなら何もしない
+      if (
+        formContainer.innerHTML &&
+        !formContainer.querySelector(".admin-loading")
+      ) {
+        // コンテンツが入っていればOK
+      } else {
+        await syncTabsData();
+        await renderForm(currentTab);
+      }
     });
   })();
 

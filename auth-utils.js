@@ -1,4 +1,4 @@
-import { auth, db } from "./firebase.js";
+import { auth, db } from "../../dev/hackathon-builder/firebase.js";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
 /**
@@ -16,24 +16,23 @@ export const checkNeedsSetup = async () => {
 };
 
 /**
- * ユーザー名とパスワードでログインする (簡易実装)
+ * ユーザー名とパスワードでログインする (Firebase Auth 連携版)
  */
 export const loginWithIdPass = async (userid, password) => {
   try {
-    const adminRef = doc(db, "config", "admin");
-    const adminSnap = await getDoc(adminRef);
+    const { signInWithEmailAndPassword } = await import("firebase/auth");
 
-    if (adminSnap.exists()) {
-      const data = adminSnap.data();
-      if (data.defaultUser === userid && data.defaultPass === password) {
-        // ログイン成功
-        localStorage.setItem("admin_mode", "true");
-        localStorage.setItem("admin_user", userid);
-        return true;
-      }
-    }
+    // システム管理者の場合は仮想的なメールアドレスに変換
+    const email = userid.includes("@") ? userid : `${userid}@admin.local`;
+
+    await signInWithEmailAndPassword(auth, email, password);
+
+    // ログイン成功
+    localStorage.setItem("admin_mode", "true");
+    localStorage.setItem("admin_user", userid);
+    return true;
   } catch (error) {
-    console.warn("ID/Pass 認証用のデータ取得に失敗しました:", error);
+    console.error("ID/Pass 認証に失敗しました:", error);
   }
   return false;
 };
@@ -52,25 +51,38 @@ export const logoutAdmin = async () => {
  * ユーザーが管理者かどうかを判定する
  */
 export const checkIsAdmin = async (user) => {
-  // admin_mode が有効なら管理者とみなす
-  if (localStorage.getItem("admin_mode") === "true") return true;
+  // admin_mode が有効なら管理者とみなす（ID/Password ログイン直後など）
+  if (localStorage.getItem("admin_mode") === "true") {
+    return true;
+  }
 
   if (!user) return false;
 
   try {
-    // Google 認証ユーザー等のメールアドレス判定
+    // Firestore から管理者情報を取得
     const adminRef = doc(db, "config", "admin");
     const adminSnap = await getDoc(adminRef);
 
     if (adminSnap.exists()) {
       const data = adminSnap.data();
-      return data.authorizedEmails?.includes(user.email);
+
+      // ブートストラップユーザーか、許可されたメールアドレスかを判定
+      const isBootstrap = user.email === data.bootstrapEmail;
+      const isAuthorized = data.authorizedEmails?.includes(user.email);
+
+      if (isBootstrap || isAuthorized) {
+        // セッションを維持するためにフラグをセット
+        localStorage.setItem("admin_mode", "true");
+        localStorage.setItem("admin_user", user.email || "admin");
+        return true;
+      }
     }
   } catch (error) {
     console.warn(
-      "管理者権限の確認に失敗しました（未ログインの可能性があります）:",
+      "管理者権限の確認中にエラーが発生しました。ログイン直後の場合は admin_mode フラグによりアクセスが許可される場合があります:",
       error
     );
+    // すでに localStorage にセットされている場合は true を返しているため、ここでは false で良い
   }
 
   return false;

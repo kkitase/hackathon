@@ -350,14 +350,48 @@ async function main() {
     .map((e) => e.trim())
     .filter((e) => e.length > 0);
 
+  // Firestore に管理者情報を保存
+  const bootstrapEmail = `${defaultUser}@admin.local`;
   await db.doc("config/admin").set({
     defaultUser,
     defaultPass,
+    bootstrapEmail,
     authorizedEmails,
     createdAt: new Date().toISOString(),
   });
 
   success("管理者情報を Firestore に保存");
+
+  // Firebase Auth ユーザーの作成/更新
+  try {
+    const { getAuth } = await import("firebase-admin/auth");
+    const authAdmin = getAuth();
+
+    try {
+      // 既存ユーザーの確認
+      const userRecord = await authAdmin.getUserByEmail(bootstrapEmail);
+      // パスワードを更新
+      await authAdmin.updateUser(userRecord.uid, {
+        password: defaultPass,
+      });
+      success(`Firebase Auth ユーザー (${bootstrapEmail}) を更新しました`);
+    } catch (e) {
+      if (e.code === "auth/user-not-found") {
+        // 新規作成
+        await authAdmin.createUser({
+          email: bootstrapEmail,
+          password: defaultPass,
+          displayName: "Bootstrap Admin",
+        });
+        success(`Firebase Auth ユーザー (${bootstrapEmail}) を作成しました`);
+      } else {
+        throw e;
+      }
+    }
+  } catch (err) {
+    warn(`Firebase Auth ユーザーの作成に失敗しました: ${err.message}`);
+    console.log("   手動で Firebase Console から作成が必要な場合があります。");
+  }
 
   // ハッカソン情報（Hero）を Firestore に保存
   console.log("   ハッカソン情報を Firestore に保存中...");
